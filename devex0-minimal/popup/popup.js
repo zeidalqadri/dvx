@@ -218,15 +218,36 @@ class Devex0Interface {
     
     listElement.innerHTML = '';
     
+    if (selectors.length === 0) {
+      listElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No high-value selectors found on this page.</div>';
+      return;
+    }
+    
     selectors.forEach((item, index) => {
       const selectorDiv = document.createElement('div');
       selectorDiv.className = 'target-item';
       selectorDiv.dataset.selector = item.selector;
       
+      // Generate explanation for what this selector likely contains
+      const explanation = this.explainSelector(item.selector, item.finalScore);
+      const confidenceLevel = this.getConfidenceLevel(item.finalScore);
+      
       selectorDiv.innerHTML = `
         <div style="flex: 1;">
-          <div class="target-name">${index + 1}. ${item.selector}</div>
-          <div class="target-details">Count: ${item.count} | Score: ${item.finalScore}</div>
+          <div class="target-name">
+            <span style="font-weight: bold;">${index + 1}. ${item.selector}</span>
+            <span style="margin-left: 8px; padding: 2px 6px; border-radius: 3px; font-size: 9px; background: ${confidenceLevel.color}; color: white;">
+              ${confidenceLevel.label}
+            </span>
+          </div>
+          <div class="target-details" style="margin-top: 4px;">
+            <div style="color: #333; font-size: 11px;">
+              💡 <strong>Likely contains:</strong> ${explanation}
+            </div>
+            <div style="margin-top: 2px; color: #666; font-size: 10px;">
+              📊 Found ${item.count} elements | Score: ${Math.round(item.finalScore)} | Avg: ${item.avgScore}
+            </div>
+          </div>
         </div>
         <div class="target-score">${Math.round(item.finalScore)}</div>
       `;
@@ -238,6 +259,99 @@ class Devex0Interface {
       
       listElement.appendChild(selectorDiv);
     });
+    
+    // Add summary footer
+    const footerDiv = document.createElement('div');
+    footerDiv.style.cssText = 'padding: 12px; background: #f9f9f9; border-top: 1px solid #eee; font-size: 11px; color: #666;';
+    footerDiv.innerHTML = `
+      <div><strong>💡 Tips:</strong></div>
+      <div>• Higher scores = more relevant for data extraction</div>
+      <div>• Select multiple selectors to extract different data types</div>
+      <div>• Green labels = high confidence, Yellow = medium, Red = experimental</div>
+    `;
+    listElement.appendChild(footerDiv);
+  }
+
+  explainSelector(selector, score) {
+    const selectorLower = selector.toLowerCase();
+    
+    // Price patterns
+    if (/price|cost|amount|total|subtotal/.test(selectorLower)) {
+      return "💰 Pricing information, costs, or monetary values";
+    }
+    
+    // Product patterns
+    if (/product|item|sku|model|brand/.test(selectorLower)) {
+      return "📦 Product information, names, or identifiers";
+    }
+    
+    // Content patterns
+    if (/title|name|heading|h[1-6]/.test(selectorLower)) {
+      return "📝 Titles, headings, or main content names";
+    }
+    
+    // Description patterns
+    if (/desc|detail|info|about|summary/.test(selectorLower)) {
+      return "📖 Descriptions, details, or additional information";
+    }
+    
+    // Navigation patterns
+    if (/nav|menu|link|button|btn/.test(selectorLower)) {
+      return "🧭 Navigation elements, buttons, or interactive controls";
+    }
+    
+    // Image patterns
+    if (/img|image|photo|pic|thumbnail/.test(selectorLower)) {
+      return "🖼️ Images, photos, or visual content";
+    }
+    
+    // List patterns
+    if (/list|item|row|card|tile/.test(selectorLower)) {
+      return "📋 List items, cards, or structured content blocks";
+    }
+    
+    // Form patterns
+    if (/input|form|field|select|textarea/.test(selectorLower)) {
+      return "📝 Form elements, inputs, or user interaction fields";
+    }
+    
+    // Cart/Shopping patterns
+    if (/cart|bag|checkout|purchase|buy|add/.test(selectorLower)) {
+      return "🛒 Shopping cart, purchase actions, or e-commerce controls";
+    }
+    
+    // Date/Time patterns
+    if (/date|time|schedule|calendar/.test(selectorLower)) {
+      return "📅 Date, time, or scheduling information";
+    }
+    
+    // Contact patterns
+    if (/contact|email|phone|address/.test(selectorLower)) {
+      return "📞 Contact information or communication details";
+    }
+    
+    // High score generic
+    if (score > 50) {
+      return "⭐ High-value content (likely product or key business data)";
+    }
+    
+    // Medium score generic
+    if (score > 20) {
+      return "📊 Structured data or content with business relevance";
+    }
+    
+    // Default
+    return "📄 General content or page elements";
+  }
+
+  getConfidenceLevel(score) {
+    if (score >= 50) {
+      return { label: 'HIGH', color: '#4CAF50' }; // Green
+    } else if (score >= 25) {
+      return { label: 'MEDIUM', color: '#FF9800' }; // Orange
+    } else {
+      return { label: 'LOW', color: '#F44336' }; // Red
+    }
   }
 
   toggleSelectorSelection(element, selector) {
