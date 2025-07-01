@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+yarn.lock
+
+# Build outputs  
+dist/
+build/
+
+# Environment variables
+.env*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Logs
+*.log
+
+# Chrome extension build artifacts
+*.crx
+*.pem
+
+# Temporary files
+*.tmp
+*.temp
