@@ -10,6 +10,8 @@ class Devex0Interface {
     this.assetAnalysis = null;
     this.selectedSelectors = new Set();
     this.workflowState = 'ready'; // ready, extracted, analyzed, done
+    this.extractionAnalyzer = null; // Will be initialized when needed
+    this.lastExtractionData = null; // Store for Google Sheets creation
   }
 
   async init() {
