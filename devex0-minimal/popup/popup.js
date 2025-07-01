@@ -70,17 +70,23 @@ class Devex0Interface {
       this.handleSkipInsights();
     });
 
+    // Google Sheets creation (from insight options)
+    document.getElementById('createGoogleSheet').addEventListener('click', () => {
+      this.handleCreateGoogleSheet();
+    });
+
     // Analysis action buttons
     document.getElementById('exass').addEventListener('click', () => {
       this.handleExass();
     });
 
-    document.getElementById('copyAnalysis').addEventListener('click', () => {
-      this.handleCopyAnalysis();
+    document.getElementById('reset').addEventListener('click', () => {
+      this.handleReset();
     });
 
-    document.getElementById('resetWorkflow').addEventListener('click', () => {
-      this.handleReset();
+    // Google Sheets creation (from analysis results)
+    document.getElementById('createAnalysisSheet').addEventListener('click', () => {
+      this.handleCreateAnalysisSheet();
     });
   }
 
