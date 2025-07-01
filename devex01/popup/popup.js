@@ -559,5 +559,6 @@ class Devex0Interface {
 // Initialize when DOM loads
 document.addEventListener('DOMContentLoaded', () => {
   const devex0 = new Devex0Interface();
+  window.devex0Interface = devex0; // Make available globally for debugging
   devex0.init();
 });
