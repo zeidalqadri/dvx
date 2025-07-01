@@ -263,7 +263,7 @@ class AssetSelectorRanker {
     for (const element of allElements) {
       const score = this._scoreElement(element);
       
-      if (score > 15) { // Confidence threshold
+      if (score > 8) { // Lowered confidence threshold to include more selectors
         const selector = this._getStableSelector(element);
         if (selector) {
           if (!selectorScores.has(selector)) {
