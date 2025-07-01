@@ -323,17 +323,25 @@
       <!-- Actions -->
       <div class="button-row">
         <button id="exass">exass</button>
-        <button id="copyAnalysis">copy all</button>
+        <button id="reset" style="background: #666;">Reset</button>
+        <button id="createAnalysisSheet" style="background: #4285f4; color: white; margin-top: 8px; width: 100%;">
+          📊 Save to Google Sheets
+        </button>
       </div>
-      
-      <button id="resetWorkflow" style="width: 100%; margin-top: 8px; font-size: 12px;">
-        start over
-      </button>
     </div>
   </div>
 
-  <div id="status" class="status">ready</div>
+  <!-- Google Sheets Status (Hidden initially) -->
+  <div id="googleSheetsStatus" style="display: none; margin-top: 12px; padding: 12px; border: 1px solid #4285f4; border-radius: 4px; background: #f0f8ff;">
+    <div id="sheetsStatusMessage">Processing...</div>
+    <div id="sheetsUrl" style="margin-top: 8px; display: none;">
+      <a href="#" target="_blank" style="color: #4285f4; text-decoration: none;">
+        🔗 Open Google Sheet
+      </a>
+    </div>
+  </div>
 
-  <script src="popup.js"></script>
+  <script src="../utils/google-sheets-integration.js"></script>
+  <script src="../utils/extraction-analyzer.js"></script>
 </body>
 </html>
