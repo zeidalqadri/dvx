@@ -1,0 +1,14 @@
+{
+  "name": "devex0-minimal",
+  "version": "1.0.0",
+  "description": "Minimal DevEx0 Chrome Extension - Intelligent Web Scraper",
+  "main": "manifest.json",
+  "keywords": [
+    "web-scraping",
+    "chrome-extension",
+    "css-selectors",
+    "data-extraction"
+  ],
+  "author": "DevEx0 Team",
+  "license": "MIT"
+}
