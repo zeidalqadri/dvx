@@ -91,21 +91,36 @@ class Devex0Interface {
   }
 
   async handleExtract() {
+    if (!this.isValidExtractionURL(this.currentTab.url)) {
+      this.setStatus('cannot extract from this page type', 'error');
+      return;
+    }
+
     const extractBtn = document.getElementById('extract');
     
     try {
       extractBtn.disabled = true;
       extractBtn.classList.add('loading');
-      this.setStatus('extracting page HTML...');
-
-      // Extract full page HTML
+      this.setStatus('extracting HTML content...');
+      
+      // Extract full page HTML using correct action name
       const response = await this.sendToTab('EXTRACT_HTML', {
         selector: 'html',
         contentType: 'outerHTML'
       });
-
+      
       if (response.success) {
         this.extractedHTML = response.content;
+        
+        // Store extraction data for Google Sheets
+        this.lastExtractionData = {
+          url: this.currentTab.url,
+          timestamp: new Date().toISOString(),
+          totalItems: 0, // Will be updated during analysis
+          selectors: [], // Will be populated during analysis
+          data: {}, // Will be populated during analysis
+          rawHTML: this.extractedHTML
+        };
         
         // Copy to clipboard
         await navigator.clipboard.writeText(this.extractedHTML);
@@ -114,15 +129,16 @@ class Devex0Interface {
         this.setStatus('HTML copied to clipboard');
         
         // Show insight options
-        this.showInsightOptions();
+        document.getElementById('extract').style.display = 'none';
+        document.getElementById('insightOptions').style.display = 'block';
         
       } else {
         throw new Error(response.error || 'Failed to extract HTML');
       }
-
+      
     } catch (error) {
       console.error('[Devex0] Extract failed:', error);
-      this.setStatus(`extraction failed: ${error.message}`, 'error');
+      this.setStatus(`extract error: ${error.message}`, 'error');
     } finally {
       extractBtn.disabled = false;
       extractBtn.classList.remove('loading');
