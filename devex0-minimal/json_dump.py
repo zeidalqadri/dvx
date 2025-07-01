@@ -1,6 +1,8 @@
 import os.path
 import json
 import re
+import hashlib
+from datetime import datetime
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -8,6 +10,25 @@ from google.auth.exceptions import RefreshError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
+# For table formatting
+try:
+    from tabulate import tabulate
+    TABULATE_AVAILABLE = True
+except ImportError:
+    TABULATE_AVAILABLE = False
+    print("📦 Install 'tabulate' for better table formatting: pip install tabulate")
+
+# For better console output
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.text import Text
+    RICH_AVAILABLE = True
+    console = Console()
+except ImportError:
+    RICH_AVAILABLE = False
+    print("📦 Install 'rich' for enhanced display: pip install rich")
 
 # Define the scopes required for the APIs.
 # If modifying these scopes, delete the file token.json.
