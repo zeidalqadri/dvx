@@ -484,6 +484,170 @@ class Devex0Interface {
     document.getElementById('copyAnalysis').style.display = 'none';
   }
 
+  // ============== GOOGLE SHEETS INTEGRATION ==============
+
+  async handleCreateGoogleSheet() {
+    // This is called from the insight options (after extract, before analysis)
+    if (!this.lastExtractionData) {
+      this.setStatus('No extraction data available', 'error');
+      return;
+    }
+
+    this.showGoogleSheetsStatus('Creating Google Sheet...');
+
+    try {
+      // Initialize analyzer if needed
+      if (!this.extractionAnalyzer) {
+        this.extractionAnalyzer = new ExtractionAnalyzer();
+      }
+
+      // Create the Google Sheet with raw extraction data
+      const result = await this.extractionAnalyzer.createAnalysisSheet(this.lastExtractionData);
+
+      if (result.success) {
+        this.showGoogleSheetsSuccess(result.sheetUrl);
+        this.setStatus('Google Sheet created successfully!');
+      } else {
+        this.showGoogleSheetsError(result.error);
+        this.setStatus(`Failed to create Google Sheet: ${result.error}`, 'error');
+      }
+
+    } catch (error) {
+      console.error('[Devex0] Google Sheets creation failed:', error);
+      this.showGoogleSheetsError(error.message);
+      this.setStatus(`Google Sheets error: ${error.message}`, 'error');
+    }
+  }
+
+  async handleCreateAnalysisSheet() {
+    // This is called from the analysis results (after analysis is complete)
+    if (!this.lastExtractionData || !this.assetAnalysis) {
+      this.setStatus('No analysis data available', 'error');
+      return;
+    }
+
+    this.showGoogleSheetsStatus('Creating enhanced analysis sheet...');
+
+    try {
+      // Initialize analyzer if needed
+      if (!this.extractionAnalyzer) {
+        this.extractionAnalyzer = new ExtractionAnalyzer();
+      }
+
+      // Create enhanced Google Sheet with full analysis
+      const result = await this.extractionAnalyzer.createAnalysisSheet(this.lastExtractionData);
+
+      if (result.success) {
+        this.showGoogleSheetsSuccess(result.sheetUrl);
+        this.setStatus('Enhanced Google Sheet created!');
+        
+        // Show summary in popup
+        const summaryReport = this.extractionAnalyzer.generateSummaryReport(result.analysis);
+        this.showAnalysisSummary(summaryReport);
+      } else {
+        this.showGoogleSheetsError(result.error);
+        this.setStatus(`Failed to create analysis sheet: ${result.error}`, 'error');
+      }
+
+    } catch (error) {
+      console.error('[Devex0] Analysis sheet creation failed:', error);
+      this.showGoogleSheetsError(error.message);
+      this.setStatus(`Analysis sheet error: ${error.message}`, 'error');
+    }
+  }
+
+  showGoogleSheetsStatus(message) {
+    const statusDiv = document.getElementById('googleSheetsStatus');
+    const messageDiv = document.getElementById('sheetsStatusMessage');
+    const urlDiv = document.getElementById('sheetsUrl');
+
+    statusDiv.style.display = 'block';
+    messageDiv.textContent = message;
+    urlDiv.style.display = 'none';
+  }
+
+  showGoogleSheetsSuccess(sheetUrl) {
+    const statusDiv = document.getElementById('googleSheetsStatus');
+    const messageDiv = document.getElementById('sheetsStatusMessage');
+    const urlDiv = document.getElementById('sheetsUrl');
+    const linkEl = urlDiv.querySelector('a');
+
+    statusDiv.style.display = 'block';
+    statusDiv.style.borderColor = '#4CAF50';
+    statusDiv.style.background = '#f0fff0';
+    
+    messageDiv.textContent = '✅ Google Sheet created successfully!';
+    
+    linkEl.href = sheetUrl;
+    urlDiv.style.display = 'block';
+  }
+
+  showGoogleSheetsError(error) {
+    const statusDiv = document.getElementById('googleSheetsStatus');
+    const messageDiv = document.getElementById('sheetsStatusMessage');
+    const urlDiv = document.getElementById('sheetsUrl');
+
+    statusDiv.style.display = 'block';
+    statusDiv.style.borderColor = '#f44336';
+    statusDiv.style.background = '#fff0f0';
+    
+    messageDiv.textContent = `❌ Error: ${error}`;
+    urlDiv.style.display = 'none';
+  }
+
+  showAnalysisSummary(summaryReport) {
+    // Update the analysis summary with Google Sheets report
+    const summaryElement = document.getElementById('analysisSummary');
+    summaryElement.innerHTML = summaryReport.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  }
+
+  // Update handleExtract to store extraction data
+  async handleExtract() {
+    if (!this.isValidExtractionURL(this.currentTab.url)) {
+      this.setStatus('cannot extract from this page type', 'error');
+      return;
+    }
+
+    try {
+      this.setStatus('extracting HTML content...');
+      
+      const response = await this.sendToTab('extractPageHTML');
+      
+      if (response.success) {
+        this.extractedHTML = response.data.html;
+        
+        // Store extraction data for Google Sheets
+        this.lastExtractionData = {
+          url: this.currentTab.url,
+          timestamp: new Date().toISOString(),
+          totalItems: 0, // Will be updated during analysis
+          selectors: [], // Will be populated during analysis
+          data: {}, // Will be populated during analysis
+          rawHTML: this.extractedHTML
+        };
+        
+        // Copy to clipboard
+        await navigator.clipboard.writeText(this.extractedHTML);
+        
+        this.workflowState = 'extracted';
+        this.setStatus('HTML copied to clipboard');
+        
+        // Show insight options
+        document.getElementById('extract').style.display = 'none';
+        document.getElementById('insightOptions').style.display = 'block';
+        
+      } else {
+        this.setStatus(`extraction failed: ${response.error}`, 'error');
+      }
+      
+    } catch (error) {
+      console.error('[Devex0] Extract failed:', error);
+      this.setStatus(`extract error: ${error.message}`, 'error');
+    }
+  }
+
+  // ============== END GOOGLE SHEETS INTEGRATION ==============
+
   async sendToTab(action, data = {}) {
     if (!this.currentTab) {
       throw new Error('no active tab');
