@@ -734,50 +734,7 @@ class Devex0Interface {
     summaryElement.innerHTML = summaryReport.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
   }
 
-  // Update handleExtract to store extraction data
-  async handleExtract() {
-    if (!this.isValidExtractionURL(this.currentTab.url)) {
-      this.setStatus('cannot extract from this page type', 'error');
-      return;
-    }
 
-    try {
-      this.setStatus('extracting HTML content...');
-      
-      const response = await this.sendToTab('extractPageHTML');
-      
-      if (response.success) {
-        this.extractedHTML = response.data.html;
-        
-        // Store extraction data for Google Sheets
-        this.lastExtractionData = {
-          url: this.currentTab.url,
-          timestamp: new Date().toISOString(),
-          totalItems: 0, // Will be updated during analysis
-          selectors: [], // Will be populated during analysis
-          data: {}, // Will be populated during analysis
-          rawHTML: this.extractedHTML
-        };
-        
-        // Copy to clipboard
-        await navigator.clipboard.writeText(this.extractedHTML);
-        
-        this.workflowState = 'extracted';
-        this.setStatus('HTML copied to clipboard');
-        
-        // Show insight options
-        document.getElementById('extract').style.display = 'none';
-        document.getElementById('insightOptions').style.display = 'block';
-        
-      } else {
-        this.setStatus(`extraction failed: ${response.error}`, 'error');
-      }
-      
-    } catch (error) {
-      console.error('[Devex0] Extract failed:', error);
-      this.setStatus(`extract error: ${error.message}`, 'error');
-    }
-  }
 
   // ============== END GOOGLE SHEETS INTEGRATION ==============
 
