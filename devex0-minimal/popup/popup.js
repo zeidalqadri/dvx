@@ -201,10 +201,12 @@ class Devex0Interface {
     const { summary, pagination } = this.assetAnalysis;
     
     const lines = [
-      `📊 ${summary.totalSelectorsFound} selectors analyzed`,
-      `🎯 Top ${summary.topSelectorsShown} shown`,
-      `📄 Pagination: ${pagination.hasPagination ? `Yes (${pagination.type})` : 'No'}`,
-      `⏰ ${new Date().toLocaleTimeString()}`
+      `📊 ${summary.totalSelectorsFound} total selectors analyzed`,
+      `🎯 Showing top ${summary.topSelectorsShown} ranked by relevance`,
+      `📄 Pagination: ${pagination.hasPagination ? `✅ ${pagination.type}` : '❌ None detected'}`,
+      `⏰ Analysis completed at ${new Date().toLocaleTimeString()}`,
+      ``,
+      `💡 <strong>How to use:</strong> Click selectors below to select them, then click "exass" to extract data`
     ];
     
     summaryElement.innerHTML = lines.join('<br>');
