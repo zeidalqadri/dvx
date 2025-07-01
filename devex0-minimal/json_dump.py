@@ -30,6 +30,95 @@ except ImportError:
     RICH_AVAILABLE = False
     print("📦 Install 'rich' for enhanced display: pip install rich")
 
+def generate_product_key(product_data, fallback_index):
+    """Generate a unique key for a product based on its data."""
+    if not product_data:
+        return f"product_{fallback_index}"
+    
+    # Try to create a meaningful key from product data
+    key_parts = []
+    if isinstance(product_data.get('brand'), dict):
+        key_parts.append(str(product_data['brand'].get('name', '')))
+    elif isinstance(product_data.get('brand'), str):
+        key_parts.append(product_data['brand'])
+    
+    if product_data.get('name'):
+        key_parts.append(str(product_data['name']))
+    
+    if key_parts:
+        # Create a hash of the combined parts
+        combined = '_'.join(key_parts).lower()
+        hash_obj = hashlib.md5(combined.encode())
+        return f"prod_{hash_obj.hexdigest()[:8]}"
+    
+    return f"product_{fallback_index}"
+
+def extract_image_urls(product_data):
+    """Extract all image URLs from product data."""
+    images = []
+    
+    # Check for direct image property
+    if 'image' in product_data:
+        if isinstance(product_data['image'], list):
+            images.extend(product_data['image'])
+        elif isinstance(product_data['image'], str):
+            images.append(product_data['image'])
+    
+    # Check for additional images
+    if 'additionalImage' in product_data:
+        if isinstance(product_data['additionalImage'], list):
+            images.extend(product_data['additionalImage'])
+        elif isinstance(product_data['additionalImage'], str):
+            images.append(product_data['additionalImage'])
+    
+    return images
+
+def create_product_table(products_data):
+    """Creates a simple table display for products when Rich is not available."""
+    if not products_data:
+        return "No product data available."
+    
+    if TABULATE_AVAILABLE:
+        # Create table data
+        headers = ["Key", "Brand", "Name", "Price", "Images"]
+        table_data = []
+        
+        for key, product_info in products_data.items():
+            product_data = product_info['parsed_data']
+            
+            # Extract brand
+            brand = "N/A"
+            if 'brand' in product_data:
+                brand_info = product_data['brand']
+                if isinstance(brand_info, dict):
+                    brand = brand_info.get('name', 'N/A')
+                else:
+                    brand = str(brand_info)
+            
+            # Extract other info
+            name = product_data.get('name', 'N/A')
+            price = "N/A"
+            if 'offers' in product_data:
+                offers = product_data['offers']
+                if isinstance(offers, dict):
+                    price = f"{offers.get('price', '')} {offers.get('priceCurrency', '')}".strip()
+            
+            images = len(extract_image_urls(product_data))
+            
+            table_data.append([key, brand, name, price, f"{images} images"])
+        
+        return tabulate(table_data, headers=headers, tablefmt="grid")
+    else:
+        # Simple text format
+        output = []
+        for key, product_info in products_data.items():
+            product_data = product_info['parsed_data']
+            output.append(f"Product: {key}")
+            output.append(f"  Brand: {product_data.get('brand', {}).get('name', 'N/A')}")
+            output.append(f"  Name: {product_data.get('name', 'N/A')}")
+            output.append("-" * 40)
+        return "\n".join(output)
+
 # Define the scopes required for the APIs.
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly", "https://www.googleapis.com/auth/drive.readonly"]
