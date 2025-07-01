@@ -143,7 +143,7 @@ class Devex0Interface {
       
       // Run asset analysis
       const ranker = new window.AssetSelectorRanker(this.extractedHTML);
-      this.assetAnalysis = ranker.getFullAnalysis(25);
+      this.assetAnalysis = ranker.getFullAnalysis(50); // Increased from 25 to show more selectors
       
       this.workflowState = 'analyzed';
       this.setStatus('asset analysis complete');
