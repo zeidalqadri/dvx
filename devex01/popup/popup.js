@@ -583,7 +583,10 @@ class Devex0Interface {
     try {
       // Initialize analyzer if needed
       if (!this.extractionAnalyzer) {
-        this.extractionAnalyzer = new ExtractionAnalyzer();
+        if (!window.ExtractionAnalyzer) {
+          throw new Error('ExtractionAnalyzer not available. Please reload the extension.');
+        }
+        this.extractionAnalyzer = new window.ExtractionAnalyzer();
       }
 
       // Create the Google Sheet with raw extraction data
@@ -616,7 +619,10 @@ class Devex0Interface {
     try {
       // Initialize analyzer if needed
       if (!this.extractionAnalyzer) {
-        this.extractionAnalyzer = new ExtractionAnalyzer();
+        if (!window.ExtractionAnalyzer) {
+          throw new Error('ExtractionAnalyzer not available. Please reload the extension.');
+        }
+        this.extractionAnalyzer = new window.ExtractionAnalyzer();
       }
 
       // Create enhanced Google Sheet with full analysis
