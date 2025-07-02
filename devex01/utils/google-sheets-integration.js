@@ -14,6 +14,8 @@ class GoogleSheetsIntegration {
    */
   async authenticate() {
     try {
+      console.log('🔐 Starting Google Sheets authentication...');
+      
       // Use Chrome's identity API for OAuth
       const authResult = await chrome.identity.getAuthToken({
         interactive: true,
@@ -23,15 +25,26 @@ class GoogleSheetsIntegration {
         ]
       });
       
-      this.authToken = authResult.token;
-      this.isAuthenticated = true;
-      
-      console.log('✅ Google Sheets authentication successful');
-      return true;
+      if (authResult && authResult.token) {
+        this.authToken = authResult.token;
+        this.isAuthenticated = true;
+        console.log('✅ Google Sheets authentication successful');
+        return true;
+      } else {
+        throw new Error('No auth token received');
+      }
     } catch (error) {
       console.error('❌ Google Sheets authentication failed:', error);
       this.isAuthenticated = false;
-      return false;
+      
+      // Provide user-friendly error messages
+      if (error.message.includes('OAuth2 not granted or revoked')) {
+        throw new Error('Google account access was denied. Please try again and grant permissions.');
+      } else if (error.message.includes('invalid_request')) {
+        throw new Error('OAuth configuration error. Please check the extension setup.');
+      } else {
+        throw new Error(`Authentication failed: ${error.message}`);
+      }
     }
   }
 
