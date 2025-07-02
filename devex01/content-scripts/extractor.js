@@ -6,6 +6,7 @@
 class DataExtractor {
   constructor() {
     this.isInitialized = false;
+    this.paginationDetector = null;
   }
 
   init() {
