@@ -87,6 +87,15 @@ class Devex0Interface {
       this.handleReset();
     });
 
+    // Selection controls
+    document.getElementById('selectAll').addEventListener('click', () => {
+      this.handleSelectAll();
+    });
+
+    document.getElementById('clearSelection').addEventListener('click', () => {
+      this.handleClearSelection();
+    });
+
     // Google Sheets creation (from analysis results)
     document.getElementById('createAnalysisSheet').addEventListener('click', () => {
       this.handleCreateAnalysisSheet();
