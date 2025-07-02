@@ -239,7 +239,8 @@
     - "Save to Google Sheets button is functional"
     - "handleCreateGoogleSheet method is properly bound"
     - "handleCreateAnalysisSheet method is properly bound"
-    - "loadGoogleSheetsDependencies method is properly bound"
+    - "Google OAuth configuration is properly set up"
+    - "Google OAuth error handling is improved"
   stuck_tasks: []
   test_all: true
   test_priority: "sequential"
