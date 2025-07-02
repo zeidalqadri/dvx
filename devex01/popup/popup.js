@@ -209,39 +209,6 @@ class Devex0Interface {
     });
   }
 
-  async loadGoogleSheetsDependencies() {
-    try {
-      // Check if Google Sheets utilities are available
-      if (window.GoogleSheetsIntegration && window.ExtractionAnalyzer) {
-        console.log('[Devex0] Google Sheets dependencies already loaded');
-        return;
-      }
-
-      // Wait a moment for scripts to load if they're still loading
-      let attempts = 0;
-      const maxAttempts = 10;
-      
-      while ((!window.GoogleSheetsIntegration || !window.ExtractionAnalyzer) && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-      }
-
-      if (!window.GoogleSheetsIntegration) {
-        throw new Error('GoogleSheetsIntegration not available');
-      }
-      
-      if (!window.ExtractionAnalyzer) {
-        throw new Error('ExtractionAnalyzer not available');
-      }
-
-      console.log('[Devex0] Google Sheets dependencies loaded successfully');
-      
-    } catch (error) {
-      console.warn('[Devex0] Google Sheets dependencies failed to load:', error);
-      // Don't throw error here - just log warning so extension still works
-    }
-  }
-
   showAnalysisResults() {
     // Hide insight options
     document.getElementById('insightOptions').style.display = 'none';
