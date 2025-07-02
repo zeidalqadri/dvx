@@ -1,8 +1,16 @@
 # DevEx01 - Chrome Extension for Intelligent Web Scraping
 
-## 🚀 **Production-Ready Chrome Extension**
+## 🎯 **READY TO USE - OAuth Configured**
 
-**DevEx01** is a complete intelligent web scraping Chrome extension with automated Google Sheets integration.
+**✅ Google Cloud OAuth is now configured and ready for Google Sheets integration!**
+
+### 🚀 **Quick Start**
+1. Load the extension in Chrome (`chrome://extensions/` → Load unpacked → select `devex01/` folder)
+2. Visit any webpage
+3. Click the DevEx0 extension icon
+4. Click "EXTRACT" → "yes, analyze" → "Create Google Sheet"
+5. Grant Google permissions when prompted
+6. Your data will be automatically saved to Google Sheets!
 
 ### ✨ **Core Features**
 - **Intelligent CSS Selector Ranking** - Smart algorithm identifies best selectors
