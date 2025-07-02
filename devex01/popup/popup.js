@@ -809,6 +809,241 @@ class Devex0Interface {
 
   // ============== END GOOGLE SHEETS INTEGRATION ==============
 
+  // ============== PAGINATION HELPER METHODS ==============
+
+  showPaginationInfo(formattedStats) {
+    // Update status with pagination info
+    this.setStatus('pagination analysis complete');
+    
+    // Show pagination info in the summary area (create if doesn't exist)
+    let paginationInfoDiv = document.getElementById('paginationInfo');
+    if (!paginationInfoDiv) {
+      paginationInfoDiv = document.createElement('div');
+      paginationInfoDiv.id = 'paginationInfo';
+      paginationInfoDiv.style.cssText = `
+        font-size: 11px; 
+        margin-bottom: 12px; 
+        padding: 8px; 
+        border: 1px solid #2196F3; 
+        background: #e3f2fd; 
+        border-radius: 4px;
+        white-space: pre-line;
+      `;
+      
+      // Insert after URL display
+      const urlDisplay = document.getElementById('urlDisplay');
+      urlDisplay.parentNode.insertBefore(paginationInfoDiv, urlDisplay.nextSibling);
+    }
+    
+    paginationInfoDiv.innerHTML = `<strong>📄 Pagination Analysis:</strong>\n${formattedStats}`;
+    paginationInfoDiv.style.display = 'block';
+  }
+
+  showPaginationGuidance() {
+    // Show guidance for user navigation
+    let guidanceDiv = document.getElementById('paginationGuidance');
+    if (!guidanceDiv) {
+      guidanceDiv = document.createElement('div');
+      guidanceDiv.id = 'paginationGuidance';
+      guidanceDiv.style.cssText = `
+        font-size: 11px; 
+        margin-bottom: 12px; 
+        padding: 12px; 
+        border: 1px solid #ff9800; 
+        background: #fff3e0; 
+        border-radius: 4px;
+      `;
+      
+      // Insert after pagination info
+      const paginationInfo = document.getElementById('paginationInfo');
+      if (paginationInfo) {
+        paginationInfo.parentNode.insertBefore(guidanceDiv, paginationInfo.nextSibling);
+      } else {
+        const urlDisplay = document.getElementById('urlDisplay');
+        urlDisplay.parentNode.insertBefore(guidanceDiv, urlDisplay.nextSibling);
+      }
+    }
+    
+    guidanceDiv.innerHTML = `
+      <strong>🎯 Please navigate through pages:</strong><br>
+      1. Click "Next" or page numbers 2-3 times<br>
+      2. I'll detect the URL pattern automatically<br>
+      3. Then return here to continue extraction<br><br>
+      <button id="checkPattern" style="padding: 6px 12px; font-size: 10px; background: #ff9800; color: white; border: none; border-radius: 3px; cursor: pointer;">
+        Check Pattern
+      </button>
+    `;
+    guidanceDiv.style.display = 'block';
+    
+    // Add event listener for pattern check
+    document.getElementById('checkPattern').addEventListener('click', () => {
+      this.checkURLPattern();
+    });
+  }
+
+  async checkURLPattern() {
+    try {
+      this.setStatus('analyzing URL pattern...');
+      
+      // Record current URL change
+      await this.sendToTab('RECORD_URL_CHANGE');
+      
+      // Stop monitoring and get pattern
+      const patternResponse = await this.sendToTab('STOP_URL_MONITORING');
+      
+      if (patternResponse.success && patternResponse.pattern.success) {
+        this.urlPattern = patternResponse.pattern;
+        this.showPatternConfirmation();
+      } else {
+        this.setStatus('pattern detection failed - please navigate more pages', 'error');
+        console.error('[Devex0] Pattern detection failed:', patternResponse.pattern?.error);
+      }
+    } catch (error) {
+      console.error('[Devex0] Pattern check failed:', error);
+      this.setStatus('pattern check failed', 'error');
+    }
+  }
+
+  showPatternConfirmation() {
+    // Hide guidance
+    const guidanceDiv = document.getElementById('paginationGuidance');
+    if (guidanceDiv) {
+      guidanceDiv.style.display = 'none';
+    }
+    
+    // Show pattern confirmation
+    let confirmDiv = document.getElementById('patternConfirmation');
+    if (!confirmDiv) {
+      confirmDiv = document.createElement('div');
+      confirmDiv.id = 'patternConfirmation';
+      confirmDiv.style.cssText = `
+        font-size: 11px; 
+        margin-bottom: 12px; 
+        padding: 12px; 
+        border: 1px solid #4CAF50; 
+        background: #f0fff0; 
+        border-radius: 4px;
+      `;
+      
+      const guidanceDiv = document.getElementById('paginationGuidance');
+      if (guidanceDiv) {
+        guidanceDiv.parentNode.insertBefore(confirmDiv, guidanceDiv.nextSibling);
+      }
+    }
+    
+    const maxPages = this.paginationStats?.totalPages || 10;
+    confirmDiv.innerHTML = `
+      <strong>✅ Pattern Detected!</strong><br>
+      Type: ${this.urlPattern.type}<br>
+      Template: ${this.urlPattern.pattern.template}<br><br>
+      <strong>Ready to process ${maxPages} pages?</strong><br>
+      <div style="margin-top: 8px;">
+        <label style="font-size: 10px;">Max pages: 
+          <input id="maxPagesInput" type="number" value="${maxPages}" min="1" max="1000" 
+                 style="width: 60px; padding: 2px; margin-left: 4px;">
+        </label>
+      </div><br>
+      <button id="processPagesBtn" style="padding: 8px 16px; font-size: 11px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 8px;">
+        Process All Pages
+      </button>
+      <button id="singlePageBtn" style="padding: 8px 16px; font-size: 11px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">
+        Single Page Only
+      </button>
+    `;
+    confirmDiv.style.display = 'block';
+    
+    // Add event listeners
+    document.getElementById('processPagesBtn').addEventListener('click', () => {
+      const maxPages = parseInt(document.getElementById('maxPagesInput').value) || 10;
+      this.processAllPages(maxPages);
+    });
+    
+    document.getElementById('singlePageBtn').addEventListener('click', () => {
+      this.processSinglePage();
+    });
+  }
+
+  async processAllPages(maxPages) {
+    try {
+      this.setStatus('generating page URLs...');
+      
+      // Generate all page URLs (this would typically be done in content script)
+      // For now, we'll simulate this functionality
+      this.setStatus(`would process ${maxPages} pages - multi-page extraction coming soon!`);
+      
+      // For now, fall back to single page extraction
+      setTimeout(() => {
+        this.processSinglePage();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('[Devex0] Multi-page processing failed:', error);
+      this.setStatus('multi-page processing failed', 'error');
+    }
+  }
+
+  async processSinglePage() {
+    // Hide pagination UI elements
+    this.hidePaginationUI();
+    
+    // Continue with normal extraction
+    this.setStatus('proceeding with single-page extraction...');
+    
+    try {
+      // Extract full page HTML
+      const response = await this.sendToTab('EXTRACT_HTML', {
+        selector: 'html',
+        contentType: 'outerHTML'
+      });
+      
+      if (response.success) {
+        this.extractedHTML = response.content;
+        
+        // Store extraction data for Google Sheets
+        this.lastExtractionData = {
+          url: this.currentTab.url,
+          timestamp: new Date().toISOString(),
+          totalItems: 0,
+          selectors: [],
+          data: {},
+          rawHTML: this.extractedHTML,
+          paginationMode: this.paginationMode,
+          paginationStats: this.paginationStats,
+          urlPattern: this.urlPattern
+        };
+        
+        // Copy to clipboard
+        await navigator.clipboard.writeText(this.extractedHTML);
+        
+        this.workflowState = 'extracted';
+        this.setStatus('HTML copied to clipboard');
+        
+        // Show insight options
+        document.getElementById('extract').style.display = 'none';
+        document.getElementById('insightOptions').style.display = 'block';
+        
+      } else {
+        throw new Error(response.error || 'Failed to extract HTML');
+      }
+    } catch (error) {
+      console.error('[Devex0] Single page extraction failed:', error);
+      this.setStatus(`extraction failed: ${error.message}`, 'error');
+    }
+  }
+
+  hidePaginationUI() {
+    // Hide all pagination-related UI elements
+    const elements = ['paginationInfo', 'paginationGuidance', 'patternConfirmation'];
+    elements.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.style.display = 'none';
+      }
+    });
+  }
+
+  // ============== END PAGINATION HELPER METHODS ==============
+
   async sendToTab(action, data = {}) {
     if (!this.currentTab) {
       throw new Error('no active tab');
