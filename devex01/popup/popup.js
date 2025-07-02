@@ -504,6 +504,41 @@ class Devex0Interface {
       `exass (${this.selectedSelectors.size})` : 'exass';
   }
 
+  handleSelectAll() {
+    // Get all selector elements
+    const selectorElements = document.querySelectorAll('.target-item');
+    
+    selectorElements.forEach(element => {
+      const selector = element.dataset.selector;
+      if (selector) {
+        this.selectedSelectors.add(selector);
+        element.classList.add('selected');
+      }
+    });
+    
+    this.updateExassButton();
+    this.setStatus(`Selected all ${this.selectedSelectors.size} selectors`);
+  }
+
+  handleClearSelection() {
+    // Clear all selections
+    const selectorElements = document.querySelectorAll('.target-item');
+    
+    selectorElements.forEach(element => {
+      element.classList.remove('selected');
+    });
+    
+    this.selectedSelectors.clear();
+    this.updateExassButton();
+    this.setStatus('Cleared all selections');
+  }
+
+  updateExassButton() {
+    const exassBtn = document.getElementById('exass');
+    exassBtn.textContent = this.selectedSelectors.size > 0 ? 
+      `exass (${this.selectedSelectors.size})` : 'exass';
+  }
+
   async handleExass() {
     const exassBtn = document.getElementById('exass');
     
