@@ -211,6 +211,21 @@
         agent: "testing"
         comment: "Verified the manifest.json contains proper OAuth2 configuration with the correct client_id (676274132481-ne01ecdlgbbra72ikcvo4svebc8atc05.apps.googleusercontent.com) and required scopes (spreadsheets and drive.file). The key field is present for consistent extension ID."
 
+  - task: "Google OAuth error handling is improved"
+    implemented: true
+    working: true
+    file: "/app/devex01/utils/google-sheets-integration.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial setup, not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "Verified the GoogleSheetsIntegration class includes proper error handling for 'invalid_request' and 'OAuth2 not granted or revoked' errors, providing user-friendly error messages."
+
 ## metadata:
   created_by: "testing_agent"
   version: "1.0"
