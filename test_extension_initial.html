@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DevEx0 Test - Initial State</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Consolas', monospace;
+      background: #fff;
+      color: #000;
+      width: 260px;
+      padding: 20px;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+    
+    .header {
+      font-size: 16px;
+      font-weight: normal;
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #000;
+    }
+    
+    .domain-indicator {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    input, select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 8px;
+      margin-bottom: 12px;
+      border: 1px solid #000;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+      outline: none;
+      letter-spacing: 0.5px;
+    }
+    
+    input:focus, select:focus {
+      background: #000;
+      color: #fff;
+    }
+    
+    input::placeholder {
+      color: #666;
+      font-style: italic;
+    }
+    
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 8px;
+      border: 1px solid #000;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.1s;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: normal;
+    }
+    
+    button:hover {
+      background: #000;
+      color: #fff;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #fff;
+      color: #000;
+    }
+    
+    .status {
+      font-size: 12px;
+      color: #666;
+      min-height: 16px;
+      padding-top: 8px;
+      border-top: 1px solid #ccc;
+      letter-spacing: 0.3px;
+    }
+    
+    .status.active {
+      color: #000;
+    }
+    
+    .status.error {
+      color: #000;
+      background: #fff;
+      border: 1px solid #000;
+      padding: 4px 8px;
+      margin-top: 4px;
+    }
+    
+    select option {
+      background: #fff;
+      color: #000;
+      font-family: inherit;
+    }
+    
+    /* Loading state */
+    .loading {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
+      animation: loading 1s infinite;
+    }
+    
+    @keyframes loading {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    /* Current URL display styles */
+    .current-url-display {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      word-break: break-all;
+      line-height: 1.3;
+    }
+    
+    .current-url-display .url-label {
+      font-weight: bold;
+      margin-bottom: 3px;
+      color: #000;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 10px;
+    }
+    
+    .current-url-display .url-value {
+      font-family: inherit;
+      font-size: 11px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    devex0
+    <div id="domainIndicator" class="domain-indicator">ready</div>
+  </div>
+
+  <!-- Simplified devex0 Workflow -->
+  <div id="extractMode">
+    <!-- Current URL Display -->
+    <div class="current-url-display" id="urlDisplay">
+      <div class="url-label">Current Page</div>
+      <div class="url-value" id="currentUrl">https://www.honeybirdette.com/collections/all-lingerie</div>
+    </div>
+
+    <!-- Main Extract Button -->
+    <button id="extract" style="width: 100%; margin-bottom: 12px; font-size: 16px; padding: 16px;">
+      EXTRACT
+    </button>
+
+    <!-- Insight Options (Hidden initially) -->
+    <div id="insightOptions" style="display: none;">
+      <div class="recon-phase">Want insights on extracted data?</div>
+      <div class="button-row">
+        <button id="showInsights">yes, analyze</button>
+        <button id="skipInsights">no, done</button>
+        <button id="createGoogleSheet" style="background: #4285f4; color: white; margin-top: 8px; width: 100%;">
+          📊 Create Google Sheet
+        </button>
+      </div>
+    </div>
+
+    <!-- Asset Analysis Results (Hidden initially) -->
+    <div id="analysisResults" style="display: none;">
+      <div class="recon-phase">Asset Analysis Complete</div>
+      
+      <!-- Analysis Summary -->
+      <div id="analysisSummary" style="font-size: 11px; margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; background: #f9f9f9;">
+        <!-- Summary will be populated by JavaScript -->
+      </div>
+
+      <!-- Top Selectors List -->
+      <div id="selectorsList" style="max-height: 400px; overflow-y: auto; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px;">
+        <!-- Selectors will be populated by JavaScript -->
+      </div>
+
+      <!-- Selection Controls -->
+      <div class="button-row" style="margin-bottom: 8px;">
+        <button id="selectAll" style="background: #2196F3; color: white;">Select All</button>
+        <button id="clearSelection" style="background: #ff9800; color: white;">Clear All</button>
+      </div>
+
+      <!-- Actions -->
+      <div class="button-row">
+        <button id="exass">exass</button>
+        <button id="reset" style="background: #666;">Reset</button>
+        <button id="createAnalysisSheet" style="background: #4285f4; color: white; margin-top: 8px; width: 100%;">
+          📊 Save to Google Sheets
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Display -->
+  <div id="status" class="status">ready - click extract to begin</div>
+
+  <!-- Google Sheets Status (Hidden initially) -->
+  <div id="googleSheetsStatus" style="display: none; margin-top: 12px; padding: 12px; border: 1px solid #4285f4; border-radius: 4px; background: #f0f8ff;">
+    <div id="sheetsStatusMessage">Processing...</div>
+    <div id="sheetsUrl" style="margin-top: 8px; display: none;">
+      <a href="#" target="_blank" style="color: #4285f4; text-decoration: none;">
+        🔗 Open Google Sheet
+      </a>
+    </div>
+  </div>
+
+  <script>
+    class Devex0Interface {
+      constructor() {
+        this.currentTab = { url: "https://www.honeybirdette.com/collections/all-lingerie" };
+        this.extractedHTML = null;
+        this.assetAnalysis = null;
+        this.selectedSelectors = new Set();
+        this.workflowState = 'ready'; // ready, extracted, analyzed, done
+        this.paginationMode = false; // Track if we're in pagination mode
+        this.paginationStats = null; // Store pagination detection results
+        this.urlPattern = null; // Store detected URL pattern
+      }
+
+      init() {
+        // Setup event listeners
+        this.setupEventListeners();
+        
+        // Update status
+        this.setStatus('ready - click extract to begin');
+      }
+
+      setupEventListeners() {
+        // Main extract button
+        document.getElementById('extract').addEventListener('click', () => {
+          this.handleExtract();
+        });
+
+        // Insight option buttons
+        document.getElementById('showInsights').addEventListener('click', () => {
+          this.handleShowInsights();
+        });
+
+        document.getElementById('skipInsights').addEventListener('click', () => {
+          this.handleSkipInsights();
+        });
+
+        // Google Sheets creation (from insight options)
+        document.getElementById('createGoogleSheet').addEventListener('click', () => {
+          this.handleCreateGoogleSheet();
+        });
+
+        // Analysis action buttons
+        document.getElementById('exass').addEventListener('click', () => {
+          this.handleExass();
+        });
+
+        document.getElementById('reset').addEventListener('click', () => {
+          this.handleReset();
+        });
+
+        // Selection controls
+        document.getElementById('selectAll').addEventListener('click', () => {
+          this.handleSelectAll();
+        });
+
+        document.getElementById('clearSelection').addEventListener('click', () => {
+          this.handleClearSelection();
+        });
+
+        // Google Sheets creation (from analysis results)
+        document.getElementById('createAnalysisSheet').addEventListener('click', () => {
+          this.handleCreateAnalysisSheet();
+        });
+      }
+
+      handleExtract() {
+        const extractBtn = document.getElementById('extract');
+        extractBtn.disabled = true;
+        extractBtn.classList.add('loading');
+        this.setStatus('checking for pagination...');
+        
+        // Simulate pagination detection
+        setTimeout(() => {
+          this.paginationStats = {
+            hasPagination: true,
+            totalPages: 10,
+            currentPage: 1,
+            totalItems: 120,
+            itemsPerPage: 12,
+            paginationType: 'numbered'
+          };
+          
+          // Show pagination info
+          this.showPaginationInfo(`🔍 Pagination detected: numbered\n📄 Total pages: 10\n📍 Current page: 1\n📊 Total items: 120\n📋 Items per page: 12`);
+          
+          // Start URL monitoring
+          this.paginationMode = true;
+          this.setStatus('pagination detected - starting URL monitoring');
+          
+          // Show pagination guidance
+          this.showPaginationGuidance();
+          
+          extractBtn.disabled = false;
+          extractBtn.classList.remove('loading');
+        }, 1500);
+      }
+
+      showPaginationInfo(formattedStats) {
+        // Update status with pagination info
+        this.setStatus('pagination analysis complete');
+        
+        // Show pagination info in the summary area
+        let paginationInfoDiv = document.getElementById('paginationInfo');
+        if (!paginationInfoDiv) {
+          paginationInfoDiv = document.createElement('div');
+          paginationInfoDiv.id = 'paginationInfo';
+          paginationInfoDiv.style.cssText = `
+            font-size: 11px; 
+            margin-bottom: 12px; 
+            padding: 8px; 
+            border: 1px solid #2196F3; 
+            background: #e3f2fd; 
+            border-radius: 4px;
+            white-space: pre-line;
+          `;
+          
+          // Insert after URL display
+          const urlDisplay = document.getElementById('urlDisplay');
+          urlDisplay.parentNode.insertBefore(paginationInfoDiv, urlDisplay.nextSibling);
+        }
+        
+        paginationInfoDiv.innerHTML = `<strong>📄 Pagination Analysis:</strong>\n${formattedStats}`;
+        paginationInfoDiv.style.display = 'block';
+      }
+
+      showPaginationGuidance() {
+        // Show guidance for user navigation
+        let guidanceDiv = document.getElementById('paginationGuidance');
+        if (!guidanceDiv) {
+          guidanceDiv = document.createElement('div');
+          guidanceDiv.id = 'paginationGuidance';
+          guidanceDiv.style.cssText = `
+            font-size: 11px; 
+            margin-bottom: 12px; 
+            padding: 12px; 
+            border: 1px solid #ff9800; 
+            background: #fff3e0; 
+            border-radius: 4px;
+          `;
+          
+          // Insert after pagination info
+          const paginationInfo = document.getElementById('paginationInfo');
+          if (paginationInfo) {
+            paginationInfo.parentNode.insertBefore(guidanceDiv, paginationInfo.nextSibling);
+          } else {
+            const urlDisplay = document.getElementById('urlDisplay');
+            urlDisplay.parentNode.insertBefore(guidanceDiv, urlDisplay.nextSibling);
+          }
+        }
+        
+        guidanceDiv.innerHTML = `
+          <strong>🎯 Please navigate through pages:</strong><br>
+          1. Click "Next" or page numbers 2-3 times<br>
+          2. I'll detect the URL pattern automatically<br>
+          3. Then return here to continue extraction<br><br>
+          <button id="checkPattern" style="padding: 6px 12px; font-size: 10px; background: #ff9800; color: white; border: none; border-radius: 3px; cursor: pointer;">
+            Check Pattern
+          </button>
+        `;
+        guidanceDiv.style.display = 'block';
+        
+        // Add event listener for pattern check
+        document.getElementById('checkPattern').addEventListener('click', () => {
+          this.checkURLPattern();
+        });
+      }
+
+      checkURLPattern() {
+        this.setStatus('analyzing URL pattern...');
+        
+        // Simulate pattern detection
+        setTimeout(() => {
+          this.urlPattern = {
+            success: true,
+            type: 'query_param',
+            pattern: {
+              template: 'https://www.honeybirdette.com/collections/all-lingerie?page={PAGE}'
+            },
+            increment: 1,
+            startValue: 1,
+            parameter: 'page'
+          };
+          
+          this.showPatternConfirmation();
+        }, 1000);
+      }
+
+      showPatternConfirmation() {
+        // Hide guidance
+        const guidanceDiv = document.getElementById('paginationGuidance');
+        if (guidanceDiv) {
+          guidanceDiv.style.display = 'none';
+        }
+        
+        // Show pattern confirmation
+        let confirmDiv = document.getElementById('patternConfirmation');
+        if (!confirmDiv) {
+          confirmDiv = document.createElement('div');
+          confirmDiv.id = 'patternConfirmation';
+          confirmDiv.style.cssText = `
+            font-size: 11px; 
+            margin-bottom: 12px; 
+            padding: 12px; 
+            border: 1px solid #4CAF50; 
+            background: #f0fff0; 
+            border-radius: 4px;
+          `;
+          
+          const guidanceDiv = document.getElementById('paginationGuidance');
+          if (guidanceDiv) {
+            guidanceDiv.parentNode.insertBefore(confirmDiv, guidanceDiv.nextSibling);
+          }
+        }
+        
+        const maxPages = this.paginationStats?.totalPages || 10;
+        confirmDiv.innerHTML = `
+          <strong>✅ Pattern Detected!</strong><br>
+          Type: ${this.urlPattern.type}<br>
+          Template: ${this.urlPattern.pattern.template}<br><br>
+          <strong>Ready to process ${maxPages} pages?</strong><br>
+          <div style="margin-top: 8px;">
+            <label style="font-size: 10px;">Max pages: 
+              <input id="maxPagesInput" type="number" value="${maxPages}" min="1" max="1000" 
+                     style="width: 60px; padding: 2px; margin-left: 4px;">
+            </label>
+          </div><br>
+          <button id="processPagesBtn" style="padding: 8px 16px; font-size: 11px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 8px;">
+            Process All Pages
+          </button>
+          <button id="singlePageBtn" style="padding: 8px 16px; font-size: 11px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">
+            Single Page Only
+          </button>
+        `;
+        confirmDiv.style.display = 'block';
+        
+        // Add event listeners
+        document.getElementById('processPagesBtn').addEventListener('click', () => {
+          const maxPages = parseInt(document.getElementById('maxPagesInput').value) || 10;
+          this.processAllPages(maxPages);
+        });
+        
+        document.getElementById('singlePageBtn').addEventListener('click', () => {
+          this.processSinglePage();
+        });
+      }
+
+      processAllPages(maxPages) {
+        this.setStatus('starting multi-page processing...');
+        
+        // Hide confirmation UI and show progress
+        this.hidePatternConfirmation();
+        this.showProcessingProgress();
+        
+        // Simulate processing
+        const totalPages = Math.min(maxPages, 10);
+        const processingState = {
+          totalPages: totalPages,
+          currentPage: 0,
+          successfulPages: 0,
+          failedPages: 0,
+          totalItems: 0,
+          startTime: Date.now()
+        };
+        
+        // Update progress every second
+        const interval = setInterval(() => {
+          processingState.currentPage++;
+          processingState.successfulPages++;
+          processingState.totalItems += 12;
+          
+          this.updateProcessingProgress(processingState);
+          
+          if (processingState.currentPage >= totalPages) {
+            clearInterval(interval);
+            setTimeout(() => {
+              this.showMultiPageResults(processingState);
+            }, 1000);
+          }
+        }, 1000);
+      }
+
+      hidePatternConfirmation() {
+        const confirmDiv = document.getElementById('patternConfirmation');
+        if (confirmDiv) {
+          confirmDiv.style.display = 'none';
+        }
+      }
+
+      showProcessingProgress() {
+        let progressDiv = document.getElementById('processingProgress');
+        if (!progressDiv) {
+          progressDiv = document.createElement('div');
+          progressDiv.id = 'processingProgress';
+          progressDiv.style.cssText = `
+            font-size: 11px; 
+            margin-bottom: 12px; 
+            padding: 12px; 
+            border: 1px solid #2196F3; 
+            background: #e3f2fd; 
+            border-radius: 4px;
+          `;
+          
+          // Insert after pagination info
+          const paginationInfo = document.getElementById('paginationInfo');
+          if (paginationInfo) {
+            paginationInfo.parentNode.insertBefore(progressDiv, paginationInfo.nextSibling);
+          } else {
+            const urlDisplay = document.getElementById('urlDisplay');
+            urlDisplay.parentNode.insertBefore(progressDiv, urlDisplay.nextSibling);
+          }
+        }
+        
+        progressDiv.innerHTML = `
+          <strong>⏳ Processing Multiple Pages...</strong><br>
+          <div id="progressBarContainer" style="margin: 8px 0; height: 10px; background: #ccc; border-radius: 5px; overflow: hidden;">
+            <div id="progressBar" style="height: 100%; width: 0%; background: #2196F3;"></div>
+          </div>
+          <div id="progressStats">
+            Page 0/0 | 0 items found | 0% complete
+          </div>
+          <div id="progressLog" style="margin-top: 8px; max-height: 80px; overflow-y: auto; font-size: 10px; color: #666;">
+            <div>⏱️ [${new Date().toLocaleTimeString()}] Starting multi-page processing...</div>
+          </div>
+          <button id="cancelProcessing" style="margin-top: 8px; padding: 4px 8px; font-size: 10px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">
+            Cancel
+          </button>
+        `;
+        progressDiv.style.display = 'block';
+        
+        // Add event listener for cancel button
+        document.getElementById('cancelProcessing').addEventListener('click', () => {
+          this.cancelMultiPageProcessing();
+        });
+      }
+
+      updateProcessingProgress(state) {
+        const progressBar = document.getElementById('progressBar');
+        const progressStats = document.getElementById('progressStats');
+        const progressLog = document.getElementById('progressLog');
+        
+        if (progressBar && progressStats && progressLog) {
+          const percent = Math.round((state.currentPage / state.totalPages) * 100);
+          progressBar.style.width = `${percent}%`;
+          
+          progressStats.textContent = `Page ${state.currentPage}/${state.totalPages} | ${state.totalItems} items found | ${percent}% complete`;
+          
+          const logEntry = document.createElement('div');
+          logEntry.innerHTML = `⏱️ [${new Date().toLocaleTimeString()}] Processed page ${state.currentPage} - found ${12} items`;
+          progressLog.appendChild(logEntry);
+          progressLog.scrollTop = progressLog.scrollHeight;
+        }
+      }
+
+      showMultiPageResults(processingState) {
+        // Hide processing progress
+        const progressDiv = document.getElementById('processingProgress');
+        if (progressDiv) {
+          progressDiv.style.display = 'none';
+        }
+        
+        // Create combined results
+        const combinedResults = {
+          multiPageExtraction: true,
+          summary: {
+            totalPages: processingState.totalPages,
+            successfulPages: processingState.successfulPages,
+            failedPages: processingState.failedPages,
+            totalItems: processingState.totalItems,
+            processingTime: Date.now() - processingState.startTime
+          }
+        };
+        
+        // Show completion message
+        const completionMessage = `
+          ✅ Multi-page extraction complete!<br>
+          📄 Processed ${processingState.successfulPages}/${processingState.totalPages} pages<br>
+          📊 Found ${processingState.totalItems} total items<br>
+          ⏱️ Completed in ${Math.round((Date.now() - processingState.startTime) / 1000)}s<br><br>
+          <strong>Combined results copied to clipboard!</strong>
+        `;
+        
+        // Show results UI
+        this.showCompletionResults(completionMessage, combinedResults);
+        
+        this.workflowState = 'done';
+        this.setStatus('multi-page extraction complete - results copied to clipboard');
+      }
+
+      showCompletionResults(message, results) {
+        // Create or show completion results UI
+        let resultsDiv = document.getElementById('completionResults');
+        if (!resultsDiv) {
+          resultsDiv = document.createElement('div');
+          resultsDiv.id = 'completionResults';
+          resultsDiv.style.cssText = `
+            font-size: 11px; 
+            margin-bottom: 12px; 
+            padding: 12px; 
+            border: 1px solid #4CAF50; 
+            background: #f0fff0; 
+            border-radius: 4px;
+          `;
+          
+          // Insert after pagination info
+          const paginationInfo = document.getElementById('paginationInfo');
+          if (paginationInfo) {
+            paginationInfo.parentNode.insertBefore(resultsDiv, paginationInfo.nextSibling);
+          } else {
+            const urlDisplay = document.getElementById('urlDisplay');
+            urlDisplay.parentNode.insertBefore(resultsDiv, urlDisplay.nextSibling);
+          }
+        }
+        
+        resultsDiv.innerHTML = `
+          ${message}
+          <div style="margin-top: 12px;">
+            <button id="createMultiPageSheet" style="padding: 8px 16px; font-size: 11px; background: #4285f4; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 8px;">
+              📊 Save to Google Sheets
+            </button>
+            <button id="resetAfterMultiPage" style="padding: 8px 16px; font-size: 11px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">
+              🔄 Reset
+            </button>
+          </div>
+        `;
+        resultsDiv.style.display = 'block';
+        
+        // Add event listeners
+        document.getElementById('createMultiPageSheet').addEventListener('click', () => {
+          this.handleCreateGoogleSheet();
+        });
+        
+        document.getElementById('resetAfterMultiPage').addEventListener('click', () => {
+          this.handleReset();
+        });
+      }
+
+      cancelMultiPageProcessing() {
+        // Hide the processing UI
+        const progressDiv = document.getElementById('processingProgress');
+        if (progressDiv) {
+          progressDiv.style.display = 'none';
+        }
+        
+        this.setStatus('Processing cancelled by user');
+      }
+
+      processSinglePage() {
+        this.setStatus('Processing single page only...');
+        
+        // Hide confirmation UI
+        this.hidePatternConfirmation();
+        
+        // Simulate extraction
+        setTimeout(() => {
+          this.extractedHTML = "<html>...</html>";
+          
+          // Show insight options
+          document.getElementById('extract').style.display = 'none';
+          document.getElementById('insightOptions').style.display = 'block';
+          
+          this.workflowState = 'extracted';
+          this.setStatus('HTML copied to clipboard');
+        }, 1000);
+      }
+
+      handleShowInsights() {
+        const showBtn = document.getElementById('showInsights');
+        showBtn.disabled = true;
+        showBtn.classList.add('loading');
+        this.setStatus('analyzing assets and selectors...');
+        
+        // Simulate analysis
+        setTimeout(() => {
+          // Hide insight options
+          document.getElementById('insightOptions').style.display = 'none';
+          
+          // Show analysis results
+          document.getElementById('analysisResults').style.display = 'block';
+          
+          // Populate summary
+          document.getElementById('analysisSummary').innerHTML = `
+            📊 15 total selectors analyzed<br>
+            🎯 Showing top 15 ranked by relevance<br>
+            📄 Pagination: ✅ numbered<br>
+            ⏰ Analysis completed at ${new Date().toLocaleTimeString()}<br>
+            <br>
+            💡 <strong>How to use:</strong> Click selectors below to select them, then click "exass" to extract data
+          `;
+          
+          this.workflowState = 'analyzed';
+          this.setStatus('asset analysis complete');
+          
+          showBtn.disabled = false;
+          showBtn.classList.remove('loading');
+        }, 1500);
+      }
+
+      handleSkipInsights() {
+        this.setStatus('workflow complete - HTML copied to clipboard');
+        this.workflowState = 'done';
+        this.showResetOption();
+      }
+
+      handleExass() {
+        this.setStatus('extracting assets...');
+        
+        // Simulate extraction
+        setTimeout(() => {
+          this.setStatus('extracted 12 items - copied to clipboard');
+        }, 1000);
+      }
+
+      handleReset() {
+        // Reset state
+        this.extractedHTML = null;
+        this.assetAnalysis = null;
+        this.selectedSelectors.clear();
+        this.workflowState = 'ready';
+        
+        // Reset pagination state
+        this.paginationMode = false;
+        this.paginationStats = null;
+        this.urlPattern = null;
+        
+        // Reset UI
+        document.getElementById('extract').style.display = 'block';
+        document.getElementById('insightOptions').style.display = 'none';
+        document.getElementById('analysisResults').style.display = 'none';
+        
+        // Hide pagination UI
+        this.hidePaginationUI();
+        
+        this.setStatus('ready - click extract to begin');
+      }
+
+      hidePaginationUI() {
+        // Remove all pagination-related UI elements
+        const elements = [
+          'paginationInfo',
+          'paginationGuidance',
+          'patternConfirmation',
+          'processingProgress',
+          'completionResults'
+        ];
+        
+        elements.forEach(id => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.remove();
+          }
+        });
+      }
+
+      showResetOption() {
+        document.getElementById('insightOptions').style.display = 'none';
+        document.getElementById('analysisResults').style.display = 'block';
+        document.getElementById('analysisSummary').innerHTML = 'Workflow complete!';
+        document.getElementById('selectorsList').innerHTML = '';
+        
+        // Hide action buttons, show only reset
+        document.getElementById('exass').style.display = 'none';
+        document.getElementById('copyAnalysis').style.display = 'none';
+      }
+
+      handleSelectAll() {
+        this.setStatus('Selected all selectors');
+      }
+
+      handleClearSelection() {
+        this.setStatus('Cleared all selections');
+      }
+
+      handleCreateGoogleSheet() {
+        this.showGoogleSheetsStatus('Creating Google Sheet...');
+        
+        // Simulate Google Sheets creation
+        setTimeout(() => {
+          this.showGoogleSheetsSuccess('https://docs.google.com/spreadsheets/d/example');
+          this.setStatus('Google Sheet created successfully!');
+        }, 1500);
+      }
+
+      handleCreateAnalysisSheet() {
+        this.showGoogleSheetsStatus('Creating enhanced analysis sheet...');
+        
+        // Simulate Google Sheets creation
+        setTimeout(() => {
+          this.showGoogleSheetsSuccess('https://docs.google.com/spreadsheets/d/example');
+          this.setStatus('Enhanced Google Sheet created!');
+        }, 1500);
+      }
+
+      showGoogleSheetsStatus(message) {
+        const statusDiv = document.getElementById('googleSheetsStatus');
+        const messageDiv = document.getElementById('sheetsStatusMessage');
+        const urlDiv = document.getElementById('sheetsUrl');
+
+        statusDiv.style.display = 'block';
+        messageDiv.textContent = message;
+        urlDiv.style.display = 'none';
+      }
+
+      showGoogleSheetsSuccess(sheetUrl) {
+        const statusDiv = document.getElementById('googleSheetsStatus');
+        const messageDiv = document.getElementById('sheetsStatusMessage');
+        const urlDiv = document.getElementById('sheetsUrl');
+        const linkEl = urlDiv.querySelector('a');
+
+        statusDiv.style.display = 'block';
+        statusDiv.style.borderColor = '#4CAF50';
+        statusDiv.style.background = '#f0fff0';
+        
+        messageDiv.textContent = '✅ Google Sheet created successfully!';
+        
+        linkEl.href = sheetUrl;
+        urlDiv.style.display = 'block';
+      }
+
+      setStatus(message, type = '') {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        statusEl.className = `status ${type}`;
+      }
+    }
+
+    // Initialize when DOM loads
+    document.addEventListener('DOMContentLoaded', () => {
+      const devex0 = new Devex0Interface();
+      window.devex0Interface = devex0; // Make available globally for debugging
+      devex0.init();
+    });
+  </script>
+</body>
+</html>
