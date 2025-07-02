@@ -196,10 +196,10 @@
         agent: "testing"
         comment: "Verified handleCreateAnalysisSheet method is properly bound to the devex0Interface and is called when the 'Save to Google Sheets' button is clicked"
 
-  - task: "loadGoogleSheetsDependencies method is properly bound"
+  - task: "Google OAuth configuration is properly set up"
     implemented: true
     working: true
-    file: "/app/devex01/popup/popup.js"
+    file: "/app/devex01/manifest.json"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -209,7 +209,7 @@
         comment: "Initial setup, not tested yet"
       - working: true
         agent: "testing"
-        comment: "Verified loadGoogleSheetsDependencies method is properly bound to the devex0Interface and is called during initialization"
+        comment: "Verified the manifest.json contains proper OAuth2 configuration with the correct client_id (676274132481-ne01ecdlgbbra72ikcvo4svebc8atc05.apps.googleusercontent.com) and required scopes (spreadsheets and drive.file). The key field is present for consistent extension ID."
 
 ## metadata:
   created_by: "testing_agent"
