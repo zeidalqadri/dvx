@@ -1476,6 +1476,209 @@ class Devex0Interface {
     console.log('[Devex0] Multi-page processing cancelled by user');
   }
 
+  hidePatternConfirmation() {
+    const confirmDiv = document.getElementById('patternConfirmation');
+    if (confirmDiv) {
+      confirmDiv.style.display = 'none';
+    }
+  }
+
+  showProcessingProgress() {
+    // Create or show processing progress UI
+    let progressDiv = document.getElementById('processingProgress');
+    if (!progressDiv) {
+      progressDiv = document.createElement('div');
+      progressDiv.id = 'processingProgress';
+      progressDiv.style.cssText = `
+        font-size: 11px; 
+        margin-bottom: 12px; 
+        padding: 12px; 
+        border: 1px solid #4CAF50; 
+        background: #f0fff0; 
+        border-radius: 4px;
+      `;
+      
+      // Insert after pagination info
+      const paginationInfo = document.getElementById('paginationInfo');
+      if (paginationInfo) {
+        paginationInfo.parentNode.insertBefore(progressDiv, paginationInfo.nextSibling);
+      } else {
+        const urlDisplay = document.getElementById('urlDisplay');
+        urlDisplay.parentNode.insertBefore(progressDiv, urlDisplay.nextSibling);
+      }
+    }
+    
+    progressDiv.innerHTML = `
+      <strong>🔄 Processing Pages...</strong><br>
+      <div id="progressStats">Initializing...</div>
+      <div id="progressBar" style="width: 100%; height: 6px; background: #eee; border-radius: 3px; margin: 8px 0;">
+        <div id="progressFill" style="width: 0%; height: 100%; background: #4CAF50; border-radius: 3px; transition: width 0.3s;"></div>
+      </div>
+      <div id="progressLog" style="max-height: 100px; overflow-y: auto; font-size: 10px; color: #666; margin-top: 8px;"></div>
+      <button id="cancelProcessing" style="padding: 4px 8px; font-size: 10px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; margin-top: 8px;">
+        Cancel Processing
+      </button>
+    `;
+    progressDiv.style.display = 'block';
+    
+    // Add cancel functionality
+    document.getElementById('cancelProcessing').addEventListener('click', () => {
+      this.cancelMultiPageProcessing();
+    });
+  }
+
+  updateProcessingProgress(state, message) {
+    const progressStats = document.getElementById('progressStats');
+    const progressFill = document.getElementById('progressFill');
+    const progressLog = document.getElementById('progressLog');
+    
+    if (progressStats) {
+      const progress = (state.currentPage / state.totalPages) * 100;
+      progressStats.innerHTML = `
+        Page ${state.currentPage} of ${state.totalPages} | 
+        Found ${state.totalItems} items | 
+        Success: ${state.successfulPages} | 
+        Failed: ${state.failedPages}
+      `;
+      
+      if (progressFill) {
+        progressFill.style.width = `${progress}%`;
+      }
+    }
+    
+    if (progressLog && message) {
+      const logEntry = document.createElement('div');
+      logEntry.style.marginBottom = '2px';
+      logEntry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      progressLog.appendChild(logEntry);
+      progressLog.scrollTop = progressLog.scrollHeight;
+    }
+    
+    // Update main status
+    this.setStatus(`Processing page ${state.currentPage}/${state.totalPages} - ${state.totalItems} items found`);
+  }
+
+  hideProcessingProgress() {
+    const progressDiv = document.getElementById('processingProgress');
+    if (progressDiv) {
+      progressDiv.style.display = 'none';
+    }
+  }
+
+  async showMultiPageResults(processingState) {
+    try {
+      // Hide processing progress
+      this.hideProcessingProgress();
+      
+      // Create combined results
+      const combinedResults = {
+        multiPageExtraction: true,
+        summary: {
+          totalPages: processingState.totalPages,
+          successfulPages: processingState.successfulPages,
+          failedPages: processingState.failedPages,
+          totalItems: processingState.totalItems,
+          uniqueSelectors: Array.from(processingState.allSelectors),
+          processingTime: Date.now() - processingState.startTime
+        },
+        pages: processingState.allPageData,
+        metadata: {
+          url: this.currentTab.url,
+          timestamp: new Date().toISOString(),
+          paginationPattern: this.urlPattern,
+          paginationStats: this.paginationStats
+        }
+      };
+      
+      // Copy combined results to clipboard
+      await navigator.clipboard.writeText(JSON.stringify(combinedResults, null, 2));
+      
+      // Show completion message
+      const completionMessage = `
+        ✅ Multi-page extraction complete!<br>
+        📄 Processed ${processingState.successfulPages}/${processingState.totalPages} pages<br>
+        📊 Found ${processingState.totalItems} total items<br>
+        🔍 Discovered ${processingState.allSelectors.size} unique selectors<br>
+        ⏱️ Completed in ${Math.round((Date.now() - processingState.startTime) / 1000)}s<br><br>
+        <strong>Combined results copied to clipboard!</strong>
+      `;
+      
+      // Show results UI
+      this.showCompletionResults(completionMessage, combinedResults);
+      
+      // Update extraction data for Google Sheets
+      this.lastExtractionData = {
+        ...combinedResults,
+        rawHTML: '', // Too large for multi-page
+        multiPage: true
+      };
+      
+      this.workflowState = 'done';
+      
+    } catch (error) {
+      console.error('[Devex0] Failed to show multi-page results:', error);
+      this.setStatus('failed to process results', 'error');
+    }
+  }
+
+  showCompletionResults(message, results) {
+    // Create or show completion results UI
+    let resultsDiv = document.getElementById('completionResults');
+    if (!resultsDiv) {
+      resultsDiv = document.createElement('div');
+      resultsDiv.id = 'completionResults';
+      resultsDiv.style.cssText = `
+        font-size: 11px; 
+        margin-bottom: 12px; 
+        padding: 12px; 
+        border: 1px solid #4CAF50; 
+        background: #f0fff0; 
+        border-radius: 4px;
+      `;
+      
+      // Insert after pagination info
+      const paginationInfo = document.getElementById('paginationInfo');
+      if (paginationInfo) {
+        paginationInfo.parentNode.insertBefore(resultsDiv, paginationInfo.nextSibling);
+      } else {
+        const urlDisplay = document.getElementById('urlDisplay');
+        urlDisplay.parentNode.insertBefore(resultsDiv, urlDisplay.nextSibling);
+      }
+    }
+    
+    resultsDiv.innerHTML = `
+      ${message}
+      <div style="margin-top: 12px;">
+        <button id="createMultiPageSheet" style="padding: 8px 16px; font-size: 11px; background: #4285f4; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 8px;">
+          📊 Save to Google Sheets
+        </button>
+        <button id="resetAfterMultiPage" style="padding: 8px 16px; font-size: 11px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">
+          🔄 Reset
+        </button>
+      </div>
+    `;
+    resultsDiv.style.display = 'block';
+    
+    // Add event listeners
+    document.getElementById('createMultiPageSheet').addEventListener('click', () => {
+      this.handleCreateAnalysisSheet();
+    });
+    
+    document.getElementById('resetAfterMultiPage').addEventListener('click', () => {
+      this.handleReset();
+    });
+  }
+
+  cancelMultiPageProcessing() {
+    // This would need to be implemented to stop the processing loop
+    // For now, just hide the processing UI
+    this.hideProcessingProgress();
+    this.setStatus('Processing cancelled by user');
+    
+    // Could implement actual cancellation logic here
+    console.log('[Devex0] Multi-page processing cancelled by user');
+  }
+
   // ============== END PAGINATION HELPER METHODS ==============
 
   async sendToTab(action, data = {}) {
