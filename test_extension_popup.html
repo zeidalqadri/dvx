@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DevEx0 Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Consolas', monospace;
+      background: #fff;
+      color: #000;
+      width: 260px;
+      padding: 20px;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+    
+    .header {
+      font-size: 16px;
+      font-weight: normal;
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #000;
+    }
+    
+    .domain-indicator {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 8px;
+      border: 1px solid #000;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.1s;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: normal;
+    }
+    
+    button:hover {
+      background: #000;
+      color: #fff;
+    }
+    
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .status {
+      font-size: 12px;
+      color: #666;
+      min-height: 16px;
+      padding-top: 8px;
+      border-top: 1px solid #ccc;
+      letter-spacing: 0.3px;
+    }
+    
+    .target-item {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      font-size: 11px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      transition: background-color 0.2s ease;
+    }
+    
+    .target-item:hover {
+      background: #f5f5f5;
+    }
+    
+    .target-item.selected {
+      background: #e3f2fd;
+      border-left: 3px solid #2196F3;
+    }
+    
+    .target-name {
+      font-weight: normal;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    
+    .target-details {
+      color: #666;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+    
+    .target-score {
+      background: #000;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      min-width: 30px;
+      text-align: center;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+    
+    .target-item.selected .target-score {
+      background: #2196F3;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    devex0
+    <div id="domainIndicator" class="domain-indicator">ready</div>
+  </div>
+
+  <!-- Asset Analysis Results -->
+  <div id="analysisResults" style="display: block;">
+    <div class="recon-phase">Asset Analysis Complete</div>
+    
+    <!-- Analysis Summary -->
+    <div id="analysisSummary" style="font-size: 11px; margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; background: #f9f9f9;">
+      📊 15 total selectors analyzed<br>
+      🎯 Showing top 15 ranked by relevance<br>
+      📄 Pagination: ❌ None detected<br>
+      ⏰ Analysis completed at 10:30:45 AM<br>
+      <br>
+      💡 <strong>How to use:</strong> Click selectors below to select them, then click "exass" to extract data
+    </div>
+
+    <!-- Top Selectors List -->
+    <div id="selectorsList" style="max-height: 400px; overflow-y: auto; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px;">
+      <!-- Selectors will be populated by JavaScript -->
+    </div>
+
+    <!-- Selection Controls -->
+    <div class="button-row" style="margin-bottom: 8px;">
+      <button id="selectAll" style="background: #2196F3; color: white;">Select All</button>
+      <button id="clearSelection" style="background: #ff9800; color: white;">Clear All</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="button-row">
+      <button id="exass">exass</button>
+      <button id="reset" style="background: #666;">Reset</button>
+    </div>
+  </div>
+
+  <!-- Status Display -->
+  <div id="status" class="status">ready</div>
+
+  <script>
+    class Devex0Interface {
+      constructor() {
+        this.selectedSelectors = new Set();
+        this.workflowState = 'analyzed';
+      }
+
+      init() {
+        // Setup event listeners
+        this.setupEventListeners();
+        
+        // Populate selectors list
+        this.populateSelectorsList();
+        
+        // Update status
+        this.setStatus('asset analysis complete');
+      }
+
+      setupEventListeners() {
+        // Selection controls
+        document.getElementById('selectAll').addEventListener('click', () => {
+          this.handleSelectAll();
+        });
+
+        document.getElementById('clearSelection').addEventListener('click', () => {
+          this.handleClearSelection();
+        });
+
+        // Actions
+        document.getElementById('exass').addEventListener('click', () => {
+          this.handleExass();
+        });
+
+        document.getElementById('reset').addEventListener('click', () => {
+          this.handleReset();
+        });
+      }
+
+      populateSelectorsList() {
+        const listElement = document.getElementById('selectorsList');
+        const selectors = [
+          { selector: '.product-card', finalScore: 85, count: 12, avgScore: 7.1 },
+          { selector: '.product-title', finalScore: 75, count: 12, avgScore: 6.3 },
+          { selector: '.product-price', finalScore: 70, count: 12, avgScore: 5.8 },
+          { selector: '.product-image', finalScore: 65, count: 12, avgScore: 5.4 },
+          { selector: '.product-description', finalScore: 60, count: 12, avgScore: 5.0 },
+          { selector: '.add-to-cart', finalScore: 55, count: 12, avgScore: 4.6 },
+          { selector: '.product-rating', finalScore: 50, count: 12, avgScore: 4.2 },
+          { selector: '.product-brand', finalScore: 45, count: 12, avgScore: 3.8 },
+          { selector: '.product-sku', finalScore: 40, count: 12, avgScore: 3.3 },
+          { selector: '.product-availability', finalScore: 35, count: 12, avgScore: 2.9 },
+          { selector: '.product-category', finalScore: 30, count: 12, avgScore: 2.5 },
+          { selector: '.product-reviews', finalScore: 25, count: 12, avgScore: 2.1 },
+          { selector: '.product-options', finalScore: 20, count: 12, avgScore: 1.7 },
+          { selector: '.product-shipping', finalScore: 15, count: 12, avgScore: 1.3 },
+          { selector: '.product-warranty', finalScore: 10, count: 12, avgScore: 0.8 }
+        ];
+        
+        listElement.innerHTML = '';
+        
+        selectors.forEach((item, index) => {
+          const selectorDiv = document.createElement('div');
+          selectorDiv.className = 'target-item';
+          selectorDiv.dataset.selector = item.selector;
+          
+          // Generate explanation for what this selector likely contains
+          const explanation = this.explainSelector(item.selector, item.finalScore);
+          const confidenceLevel = this.getConfidenceLevel(item.finalScore);
+          
+          selectorDiv.innerHTML = `
+            <div style="flex: 1;">
+              <div class="target-name">
+                <span style="font-weight: bold;">${index + 1}. ${item.selector}</span>
+                <span style="margin-left: 8px; padding: 2px 6px; border-radius: 3px; font-size: 9px; background: ${confidenceLevel.color}; color: white;">
+                  ${confidenceLevel.label}
+                </span>
+              </div>
+              <div class="target-details" style="margin-top: 4px;">
+                <div style="color: #333; font-size: 11px;">
+                  💡 <strong>Likely contains:</strong> ${explanation}
+                </div>
+                <div style="margin-top: 2px; color: #666; font-size: 10px;">
+                  📊 Found ${item.count} elements | Score: ${Math.round(item.finalScore)} | Avg: ${item.avgScore}
+                </div>
+              </div>
+            </div>
+            <div class="target-score">${Math.round(item.finalScore)}</div>
+          `;
+          
+          // Click to select/deselect
+          selectorDiv.addEventListener('click', () => {
+            this.toggleSelectorSelection(selectorDiv, item.selector);
+          });
+          
+          listElement.appendChild(selectorDiv);
+        });
+      }
+
+      explainSelector(selector, score) {
+        const selectorLower = selector.toLowerCase();
+        
+        // Price patterns
+        if (/price|cost|amount|total|subtotal/.test(selectorLower)) {
+          return "💰 Pricing information, costs, or monetary values";
+        }
+        
+        // Product patterns
+        if (/product|item|sku|model|brand/.test(selectorLower)) {
+          return "📦 Product information, names, or identifiers";
+        }
+        
+        // Content patterns
+        if (/title|name|heading|h[1-6]/.test(selectorLower)) {
+          return "📝 Titles, headings, or main content names";
+        }
+        
+        // Description patterns
+        if (/desc|detail|info|about|summary/.test(selectorLower)) {
+          return "📖 Descriptions, details, or additional information";
+        }
+        
+        // Navigation patterns
+        if (/nav|menu|link|button|btn/.test(selectorLower)) {
+          return "🧭 Navigation elements, buttons, or interactive controls";
+        }
+        
+        // Image patterns
+        if (/img|image|photo|pic|thumbnail/.test(selectorLower)) {
+          return "🖼️ Images, photos, or visual content";
+        }
+        
+        // List patterns
+        if (/list|item|row|card|tile/.test(selectorLower)) {
+          return "📋 List items, cards, or structured content blocks";
+        }
+        
+        // Form patterns
+        if (/input|form|field|select|textarea/.test(selectorLower)) {
+          return "📝 Form elements, inputs, or user interaction fields";
+        }
+        
+        // Cart/Shopping patterns
+        if (/cart|bag|checkout|purchase|buy|add/.test(selectorLower)) {
+          return "🛒 Shopping cart, purchase actions, or e-commerce controls";
+        }
+        
+        // Date/Time patterns
+        if (/date|time|schedule|calendar/.test(selectorLower)) {
+          return "📅 Date, time, or scheduling information";
+        }
+        
+        // Contact patterns
+        if (/contact|email|phone|address/.test(selectorLower)) {
+          return "📞 Contact information or communication details";
+        }
+        
+        // High score generic
+        if (score > 50) {
+          return "⭐ High-value content (likely product or key business data)";
+        }
+        
+        // Medium score generic
+        if (score > 20) {
+          return "📊 Structured data or content with business relevance";
+        }
+        
+        // Default
+        return "📄 General content or page elements";
+      }
+
+      getConfidenceLevel(score) {
+        if (score >= 50) {
+          return { label: 'HIGH', color: '#4CAF50' }; // Green
+        } else if (score >= 25) {
+          return { label: 'MEDIUM', color: '#FF9800' }; // Orange
+        } else {
+          return { label: 'LOW', color: '#F44336' }; // Red
+        }
+      }
+
+      toggleSelectorSelection(element, selector) {
+        if (this.selectedSelectors.has(selector)) {
+          this.selectedSelectors.delete(selector);
+          element.classList.remove('selected');
+        } else {
+          this.selectedSelectors.add(selector);
+          element.classList.add('selected');
+        }
+        
+        // Update exass button state
+        this.updateExassButton();
+      }
+
+      handleSelectAll() {
+        // Get all selector elements
+        const selectorElements = document.querySelectorAll('.target-item');
+        
+        selectorElements.forEach(element => {
+          const selector = element.dataset.selector;
+          if (selector) {
+            this.selectedSelectors.add(selector);
+            element.classList.add('selected');
+          }
+        });
+        
+        this.updateExassButton();
+        this.setStatus(`Selected all ${this.selectedSelectors.size} selectors`);
+      }
+
+      handleClearSelection() {
+        // Clear all selections
+        const selectorElements = document.querySelectorAll('.target-item');
+        
+        selectorElements.forEach(element => {
+          element.classList.remove('selected');
+        });
+        
+        this.selectedSelectors.clear();
+        this.updateExassButton();
+        this.setStatus('Cleared all selections');
+      }
+
+      updateExassButton() {
+        const exassBtn = document.getElementById('exass');
+        exassBtn.textContent = this.selectedSelectors.size > 0 ? 
+          `exass (${this.selectedSelectors.size})` : 'exass';
+      }
+
+      handleExass() {
+        if (this.selectedSelectors.size === 0) {
+          this.setStatus('select selectors first', 'error');
+          return;
+        }
+        
+        this.setStatus(`extracting assets using ${this.selectedSelectors.size} selectors...`);
+        
+        // Simulate extraction
+        setTimeout(() => {
+          this.setStatus(`extracted ${this.selectedSelectors.size * 12} items - copied to clipboard`);
+        }, 1000);
+      }
+
+      handleReset() {
+        // Reset state
+        this.selectedSelectors.clear();
+        this.workflowState = 'ready';
+        
+        // Reset UI
+        const selectorElements = document.querySelectorAll('.target-item');
+        selectorElements.forEach(element => {
+          element.classList.remove('selected');
+        });
+        
+        this.updateExassButton();
+        this.setStatus('ready - click extract to begin');
+      }
+
+      setStatus(message, type = '') {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        statusEl.className = `status ${type}`;
+      }
+    }
+
+    // Initialize when DOM loads
+    document.addEventListener('DOMContentLoaded', () => {
+      const devex0 = new Devex0Interface();
+      window.devex0Interface = devex0; // Make available globally for debugging
+      devex0.init();
+    });
+  </script>
+</body>
+</html>
