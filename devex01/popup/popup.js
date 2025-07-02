@@ -12,6 +12,9 @@ class Devex0Interface {
     this.workflowState = 'ready'; // ready, extracted, analyzed, done
     this.extractionAnalyzer = null; // Will be initialized when needed
     this.lastExtractionData = null; // Store for Google Sheets creation
+    this.paginationMode = false; // Track if we're in pagination mode
+    this.paginationStats = null; // Store pagination detection results
+    this.urlPattern = null; // Store detected URL pattern
   }
 
   async init() {
