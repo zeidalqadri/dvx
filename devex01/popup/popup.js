@@ -1264,7 +1264,13 @@ class Devex0Interface {
 
   hidePaginationUI() {
     // Hide all pagination-related UI elements
-    const elements = ['paginationInfo', 'paginationGuidance', 'patternConfirmation'];
+    const elements = [
+      'paginationInfo', 
+      'paginationGuidance', 
+      'patternConfirmation',
+      'processingProgress',
+      'completionResults'
+    ];
     elements.forEach(id => {
       const element = document.getElementById(id);
       if (element) {
