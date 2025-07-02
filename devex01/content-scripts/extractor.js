@@ -393,6 +393,110 @@ class DataExtractor {
     
     return element.tagName.toLowerCase();
   }
+
+  // ============== PAGINATION DETECTION METHODS ==============
+
+  async handlePaginationDetection() {
+    try {
+      if (!this.paginationDetector) {
+        return {
+          success: false,
+          error: 'Pagination detector not available'
+        };
+      }
+
+      const stats = this.paginationDetector.detectPaginationOnPage();
+      return {
+        success: true,
+        stats: stats,
+        formatted: this.paginationDetector.formatStatsForDisplay(stats)
+      };
+    } catch (error) {
+      console.error('[DataExtractor] Pagination detection failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  async handleStartURLMonitoring() {
+    try {
+      if (!this.paginationDetector) {
+        return {
+          success: false,
+          error: 'Pagination detector not available'
+        };
+      }
+
+      const startURL = this.paginationDetector.startURLMonitoring();
+      return {
+        success: true,
+        startURL: startURL,
+        message: 'URL monitoring started. Please navigate through 2-3 pages.'
+      };
+    } catch (error) {
+      console.error('[DataExtractor] URL monitoring start failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  async handleRecordURLChange() {
+    try {
+      if (!this.paginationDetector) {
+        return {
+          success: false,
+          error: 'Pagination detector not available'
+        };
+      }
+
+      this.paginationDetector.recordURLChange();
+      const status = this.paginationDetector.getMonitoringStatus();
+      
+      return {
+        success: true,
+        status: status,
+        message: `Recorded URL change. Total recorded: ${status.urlHistoryLength}`
+      };
+    } catch (error) {
+      console.error('[DataExtractor] URL change recording failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  async handleStopURLMonitoring() {
+    try {
+      if (!this.paginationDetector) {
+        return {
+          success: false,
+          error: 'Pagination detector not available'
+        };
+      }
+
+      const pattern = this.paginationDetector.stopURLMonitoring();
+      return {
+        success: pattern.success,
+        pattern: pattern,
+        message: pattern.success ? 
+          `Pattern detected: ${pattern.type}` : 
+          `Pattern detection failed: ${pattern.error}`
+      };
+    } catch (error) {
+      console.error('[DataExtractor] URL monitoring stop failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // ============== END PAGINATION DETECTION METHODS ==============
 }
 
 // Initialize data extractor
