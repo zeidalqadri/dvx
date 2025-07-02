@@ -665,10 +665,18 @@ class Devex0Interface {
     this.selectedSelectors.clear();
     this.workflowState = 'ready';
     
+    // Reset pagination state
+    this.paginationMode = false;
+    this.paginationStats = null;
+    this.urlPattern = null;
+    
     // Reset UI
     document.getElementById('extract').style.display = 'block';
     document.getElementById('insightOptions').style.display = 'none';
     document.getElementById('analysisResults').style.display = 'none';
+    
+    // Hide pagination UI
+    this.hidePaginationUI();
     
     this.setStatus('ready - click extract to begin');
   }
