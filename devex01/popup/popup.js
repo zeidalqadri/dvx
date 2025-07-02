@@ -22,6 +22,9 @@ class Devex0Interface {
       // Show current URL
       this.displayCurrentURL();
       
+      // Load Google Sheets dependencies
+      await this.loadGoogleSheetsDependencies();
+      
       // Setup event listeners
       this.setupEventListeners();
       
