@@ -241,21 +241,29 @@
         agent: "testing"
         comment: "Verified loadGoogleSheetsDependencies method is properly bound to the devex0Interface and is called during initialization"
 
+  - task: "Select All and Clear All functionality for selectors"
+    implemented: true
+    working: true
+    file: "/app/devex01/popup/popup.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial setup, not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "Code review confirms proper implementation of 'Select All' and 'Clear All' functionality. The handleSelectAll() method correctly selects all selectors and updates the UI, while the handleClearSelection() method properly clears all selections. The exass button text is updated to show the count of selected items, and appropriate status messages are displayed."
+
 ## metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
 
 ## test_plan:
   current_focus:
-    - "Google Sheets integration loads properly"
-    - "ExtractionAnalyzer class is available"
-    - "Create Google Sheet button is functional"
-    - "Save to Google Sheets button is functional"
-    - "handleCreateGoogleSheet method is properly bound"
-    - "handleCreateAnalysisSheet method is properly bound"
-    - "Google OAuth configuration is properly set up"
-    - "Google OAuth error handling is improved"
+    - "Select All and Clear All functionality for selectors"
   stuck_tasks: []
   test_all: true
   test_priority: "sequential"
@@ -269,3 +277,5 @@
     message: "Google Sheets integration has been tested successfully. The GoogleSheetsIntegration and ExtractionAnalyzer classes are properly loaded, and the handleCreateGoogleSheet and handleCreateAnalysisSheet methods are properly bound to the devex0Interface. The 'Create Google Sheet' and 'Save to Google Sheets' buttons are functional and correctly call their respective methods. No 'undefined' method errors were found in the console when clicking the Google Sheets buttons."
   - agent: "testing"
     message: "Verified the updated Google OAuth configuration in the Chrome extension. The manifest.json now includes the key field for consistent extension ID, and the OAuth2 configuration is properly set up with the correct client_id and required scopes. The GoogleSheetsIntegration class includes proper error handling for 'invalid_request' and 'OAuth2 not granted or revoked' errors. Both 'Create Google Sheet' and 'Save to Google Sheets' buttons are properly implemented and connected to their respective handlers."
+  - agent: "testing"
+    message: "Verified the 'Select All' and 'Clear All' functionality in the Chrome Extension. Code review confirms that both buttons are properly implemented in the HTML with correct styling. The handleSelectAll() method correctly selects all selectors and updates the UI, while the handleClearSelection() method properly clears all selections. The exass button text is updated to show the count of selected items (e.g., 'exass (15)'), and appropriate status messages are displayed. The functionality integrates well with the existing extraction workflow."
