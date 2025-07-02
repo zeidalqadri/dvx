@@ -3,6 +3,7 @@
   "name": "DevEx0 - Intelligent Web Scraper",
   "description": "Intelligent web scraping with CSS selector ranking, focused extraction, and automated Google Sheets reporting",
   "version": "1.1.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqK7VX2vqTGjU3k5mE4jL8xC9Y2Xq1fP4N6bR7wQ3gH2vB8sD9fA1xK3jM5nO2pR4tU6yW8zC1aS5dF7hJ9kL0mN3oP2qR6sT8uV0wX2yZ4aC5bD7eF9gH1iJ3kL5mN7oP0qR2sT4uV6wX8yZ0aC2bD4eF6gH8iJ0kL2mN4oP6qR8sT0uV2wX4yZ6aC8bD0eF2gH4iJ6kL8mN0oP2qR4sT6uV8wX0yZ2aC4bD6eF8gH0iJ2kL4mN6oP8qR0sT2uV4wX6yZ8aC0bD2eF4gH6iJ8kL0mN2oP4qR6sT8uV0wX2yZ4aC6bD8eF0gH2iJ4kL6mN8oP0qR2",
   "permissions": [
     "activeTab",
     "clipboardWrite",
