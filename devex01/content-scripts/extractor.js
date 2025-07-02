@@ -15,8 +15,21 @@ class DataExtractor {
     console.log('[DataExtractor] Initializing on:', window.location.href);
     this.isInitialized = true;
     
+    // Initialize pagination detector
+    this.initializePaginationDetector();
+    
     // Setup message listener
     this.setupMessageListener();
+  }
+
+  initializePaginationDetector() {
+    // Load pagination detector if available
+    if (window.PaginationDetector) {
+      this.paginationDetector = new window.PaginationDetector();
+      console.log('[DataExtractor] Pagination detector initialized');
+    } else {
+      console.warn('[DataExtractor] PaginationDetector not available');
+    }
   }
 
   setupMessageListener() {
