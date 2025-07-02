@@ -116,6 +116,39 @@ class Devex0Interface {
     try {
       extractBtn.disabled = true;
       extractBtn.classList.add('loading');
+      this.setStatus('checking for pagination...');
+      
+      // First, detect pagination on the page
+      const paginationResponse = await this.sendToTab('DETECT_PAGINATION');
+      
+      if (paginationResponse.success) {
+        this.paginationStats = paginationResponse.stats;
+        console.log('[Devex0] Pagination detection result:', this.paginationStats);
+        
+        // Show pagination info to user
+        this.showPaginationInfo(paginationResponse.formatted);
+        
+        if (this.paginationStats.hasPagination) {
+          // If pagination detected, enter pagination mode
+          this.paginationMode = true;
+          this.setStatus('pagination detected - starting URL monitoring');
+          
+          // Start URL monitoring
+          const monitoringResponse = await this.sendToTab('START_URL_MONITORING');
+          if (monitoringResponse.success) {
+            this.showPaginationGuidance();
+            return; // Wait for user to navigate pages
+          } else {
+            console.warn('[Devex0] URL monitoring failed:', monitoringResponse.error);
+            // Continue with normal extraction
+            this.paginationMode = false;
+          }
+        }
+      } else {
+        console.warn('[Devex0] Pagination detection failed:', paginationResponse.error);
+      }
+      
+      // Normal extraction flow (no pagination or pagination detection failed)
       this.setStatus('extracting HTML content...');
       
       // Extract full page HTML using correct action name
@@ -134,7 +167,9 @@ class Devex0Interface {
           totalItems: 0, // Will be updated during analysis
           selectors: [], // Will be populated during analysis
           data: {}, // Will be populated during analysis
-          rawHTML: this.extractedHTML
+          rawHTML: this.extractedHTML,
+          paginationMode: this.paginationMode,
+          paginationStats: this.paginationStats
         };
         
         // Copy to clipboard
