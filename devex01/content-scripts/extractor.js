@@ -65,6 +65,30 @@ class DataExtractor {
         this.extractWithSelectors(message.data).then(sendResponse);
         return true; // Async response
       }
+      
+      // Handle pagination detection
+      else if (message.action === 'DETECT_PAGINATION') {
+        this.handlePaginationDetection().then(sendResponse);
+        return true; // Async response
+      }
+      
+      // Handle URL monitoring start
+      else if (message.action === 'START_URL_MONITORING') {
+        this.handleStartURLMonitoring().then(sendResponse);
+        return true; // Async response
+      }
+      
+      // Handle URL change recording
+      else if (message.action === 'RECORD_URL_CHANGE') {
+        this.handleRecordURLChange().then(sendResponse);
+        return true; // Async response
+      }
+      
+      // Handle URL monitoring stop and pattern analysis
+      else if (message.action === 'STOP_URL_MONITORING') {
+        this.handleStopURLMonitoring().then(sendResponse);
+        return true; // Async response
+      }
     });
   }
 
