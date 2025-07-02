@@ -973,21 +973,244 @@ class Devex0Interface {
 
   async processAllPages(maxPages) {
     try {
-      this.setStatus('generating page URLs...');
+      this.setStatus('starting multi-page processing...');
       
-      // Generate all page URLs (this would typically be done in content script)
-      // For now, we'll simulate this functionality
-      this.setStatus(`would process ${maxPages} pages - multi-page extraction coming soon!`);
+      // Hide confirmation UI and show progress
+      this.hidePatternConfirmation();
+      this.showProcessingProgress();
       
-      // For now, fall back to single page extraction
-      setTimeout(() => {
-        this.processSinglePage();
-      }, 2000);
+      // Generate all page URLs using detected pattern
+      const pageURLs = this.generatePageURLs(maxPages);
+      
+      if (pageURLs.length === 0) {
+        throw new Error('Failed to generate page URLs from pattern');
+      }
+      
+      console.log('[Devex0] Generated URLs for processing:', pageURLs);
+      
+      // Initialize processing state
+      const processingState = {
+        totalPages: pageURLs.length,
+        currentPage: 0,
+        successfulPages: 0,
+        failedPages: 0,
+        totalItems: 0,
+        allPageData: [],
+        allSelectors: new Set(),
+        startTime: Date.now()
+      };
+      
+      // Process each page
+      for (let i = 0; i < pageURLs.length; i++) {
+        const pageURL = pageURLs[i];
+        const pageNumber = i + 1;
+        
+        processingState.currentPage = pageNumber;
+        this.updateProcessingProgress(processingState, `Loading page ${pageNumber}...`);
+        
+        try {
+          // Navigate to page with retry mechanism
+          const pageData = await this.processSinglePageWithRetry(pageURL, pageNumber, 3);
+          
+          if (pageData.success) {
+            processingState.successfulPages++;
+            processingState.totalItems += pageData.itemCount || 0;
+            processingState.allPageData.push(pageData);
+            
+            // Collect unique selectors discovered
+            if (pageData.selectors) {
+              pageData.selectors.forEach(sel => processingState.allSelectors.add(sel));
+            }
+            
+            this.updateProcessingProgress(processingState, 
+              `Page ${pageNumber}: Found ${pageData.itemCount || 0} items`);
+          } else {
+            processingState.failedPages++;
+            console.warn(`[Devex0] Page ${pageNumber} failed:`, pageData.error);
+            this.updateProcessingProgress(processingState, 
+              `Page ${pageNumber}: Failed - ${pageData.error}`);
+          }
+          
+        } catch (error) {
+          processingState.failedPages++;
+          console.error(`[Devex0] Page ${pageNumber} error:`, error);
+          this.updateProcessingProgress(processingState, 
+            `Page ${pageNumber}: Error - ${error.message}`);
+        }
+        
+        // Small delay between pages to avoid overwhelming the server
+        if (i < pageURLs.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      // Processing complete - show results
+      await this.showMultiPageResults(processingState);
       
     } catch (error) {
       console.error('[Devex0] Multi-page processing failed:', error);
-      this.setStatus('multi-page processing failed', 'error');
+      this.setStatus(`multi-page processing failed: ${error.message}`, 'error');
+      this.hideProcessingProgress();
     }
+  }
+
+  generatePageURLs(maxPages) {
+    if (!this.urlPattern || !this.urlPattern.success) {
+      console.error('[Devex0] No valid URL pattern for generation');
+      return [];
+    }
+
+    const urls = [];
+    const { pattern, increment, startValue } = this.urlPattern;
+
+    for (let page = 1; page <= maxPages; page++) {
+      let pageValue;
+      
+      if (increment === 1) {
+        // Simple page numbering: 1, 2, 3, ...
+        pageValue = page;
+      } else {
+        // Offset-based: 0, 20, 40, ... or 1, 21, 41, ...
+        pageValue = startValue + (page - 1) * increment;
+      }
+
+      const url = pattern.template.replace('{PAGE}', pageValue);
+      urls.push(url);
+    }
+
+    return urls;
+  }
+
+  async processSinglePageWithRetry(pageURL, pageNumber, maxRetries) {
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[Devex0] Processing page ${pageNumber}, attempt ${attempt}: ${pageURL}`);
+        
+        // Navigate to the page using Chrome tabs API
+        await this.navigateToPage(pageURL);
+        
+        // Wait for page to load
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Re-run asset analysis on this page
+        const analysisResult = await this.runAssetAnalysisOnCurrentPage();
+        
+        if (!analysisResult.success) {
+          throw new Error(`Asset analysis failed: ${analysisResult.error}`);
+        }
+        
+        // Extract data using discovered selectors
+        const extractionResult = await this.extractDataFromCurrentPage(analysisResult.selectors);
+        
+        return {
+          success: true,
+          pageNumber: pageNumber,
+          url: pageURL,
+          itemCount: extractionResult.totalItems || 0,
+          selectors: analysisResult.selectors.map(s => s.selector),
+          analysis: analysisResult,
+          extraction: extractionResult,
+          timestamp: new Date().toISOString()
+        };
+        
+      } catch (error) {
+        console.warn(`[Devex0] Page ${pageNumber} attempt ${attempt} failed:`, error);
+        lastError = error;
+        
+        if (attempt < maxRetries) {
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+    }
+    
+    // All retries failed
+    return {
+      success: false,
+      pageNumber: pageNumber,
+      url: pageURL,
+      error: lastError?.message || 'Unknown error',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async navigateToPage(url) {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.update(this.currentTab.id, { url: url }, (tab) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else {
+          resolve(tab);
+        }
+      });
+    });
+  }
+
+  async runAssetAnalysisOnCurrentPage() {
+    try {
+      // Extract HTML from current page
+      const htmlResponse = await this.sendToTab('EXTRACT_HTML', {
+        selector: 'html',
+        contentType: 'outerHTML'
+      });
+      
+      if (!htmlResponse.success) {
+        throw new Error('Failed to extract HTML for analysis');
+      }
+      
+      // Load AssetSelectorRanker if needed
+      await this.loadAssetRanker();
+      
+      // Run analysis
+      const ranker = new window.AssetSelectorRanker(htmlResponse.content);
+      const analysis = ranker.getFullAnalysis(25); // Get top 25 selectors
+      
+      return {
+        success: true,
+        selectors: analysis.selectors,
+        summary: analysis.summary,
+        pagination: analysis.pagination
+      };
+      
+    } catch (error) {
+      console.error('[Devex0] Asset analysis failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  async extractDataFromCurrentPage(selectors) {
+    const extractionResults = {
+      totalItems: 0,
+      data: {},
+      selectorsUsed: []
+    };
+    
+    // Use top 10 selectors for extraction to get comprehensive data
+    const topSelectors = selectors.slice(0, 10).map(s => s.selector);
+    
+    for (const selector of topSelectors) {
+      try {
+        const response = await this.sendToTab('EXTRACT_WITH_SELECTOR', {
+          selector: selector,
+          options: { includeText: true, includeAttributes: true, smartExtraction: true }
+        });
+        
+        if (response.success && response.data && response.data.length > 0) {
+          extractionResults.data[selector] = response.data;
+          extractionResults.totalItems += response.data.length;
+          extractionResults.selectorsUsed.push(selector);
+        }
+      } catch (error) {
+        console.warn(`[Devex0] Failed to extract ${selector}:`, error);
+      }
+    }
+    
+    return extractionResults;
   }
 
   async processSinglePage() {
