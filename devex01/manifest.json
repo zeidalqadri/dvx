@@ -34,7 +34,10 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content-scripts/extractor.js"],
+      "js": [
+        "utils/pagination-detector.js",
+        "content-scripts/extractor.js"
+      ],
       "run_at": "document_idle"
     }
   ],
