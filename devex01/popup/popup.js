@@ -1215,7 +1215,8 @@ class Devex0Interface {
         pageValue = startValue + (page - 1) * increment;
       }
 
-      // Fix for the pattern structure - pattern is a string, not an object
+      // Fix for the pattern structure mismatch
+      // The pattern is a string, not an object with a template property
       const url = pattern.replace('{PAGE}', pageValue);
       urls.push(url);
     }
