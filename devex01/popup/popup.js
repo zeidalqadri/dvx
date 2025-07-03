@@ -1643,6 +1643,95 @@ class Devex0Interface {
     console.log('[Devex0] Multi-page processing cancelled by user');
   }
 
+  async saveProcessingProgress(processingState) {
+    try {
+      const tabKey = `devex0_progress_${this.currentTab.id}`;
+      await chrome.storage.local.set({ [tabKey]: processingState });
+      console.log('[Devex0] Processing progress saved');
+    } catch (error) {
+      console.warn('[Devex0] Failed to save processing progress:', error);
+    }
+  }
+
+  async saveIncrementalResults(processingState) {
+    try {
+      const tabKey = `devex0_results_${this.currentTab.id}`;
+      const partialResults = {
+        multiPageExtraction: true,
+        status: 'in_progress',
+        summary: {
+          totalPages: processingState.totalPages,
+          successfulPages: processingState.successfulPages,
+          failedPages: processingState.failedPages,
+          totalItems: processingState.totalItems,
+          uniqueSelectors: Array.from(processingState.allSelectors),
+          processingTime: Date.now() - processingState.startTime
+        },
+        pages: processingState.allPageData,
+        metadata: {
+          url: this.currentTab.url,
+          timestamp: new Date().toISOString(),
+          paginationPattern: this.urlPattern,
+          paginationStats: this.paginationStats
+        }
+      };
+      
+      await chrome.storage.local.set({ [tabKey]: partialResults });
+      console.log(`[Devex0] Incremental results saved (${processingState.successfulPages} pages)`);
+    } catch (error) {
+      console.warn('[Devex0] Failed to save incremental results:', error);
+    }
+  }
+
+  async handleProcessingCrash(processingState) {
+    try {
+      console.log('[Devex0] Handling processing crash - saving partial results');
+      
+      // Save final partial results
+      await this.saveIncrementalResults(processingState);
+      
+      // Create crash recovery results
+      const crashResults = {
+        multiPageExtraction: true,
+        status: 'crashed_partial',
+        summary: {
+          totalPages: processingState.totalPages,
+          successfulPages: processingState.successfulPages,
+          failedPages: processingState.failedPages,
+          totalItems: processingState.totalItems,
+          uniqueSelectors: Array.from(processingState.allSelectors),
+          processingTime: Date.now() - processingState.startTime,
+          crashedAt: processingState.currentPage
+        },
+        pages: processingState.allPageData,
+        metadata: {
+          url: this.currentTab.url,
+          timestamp: new Date().toISOString(),
+          paginationPattern: this.urlPattern,
+          paginationStats: this.paginationStats,
+          crashReason: 'Extension context lost during navigation'
+        }
+      };
+      
+      // Copy partial results to clipboard
+      await navigator.clipboard.writeText(JSON.stringify(crashResults, null, 2));
+      
+      // Show crash recovery message
+      const crashMessage = `
+        ⚠️ Processing interrupted after page ${processingState.currentPage}!<br>
+        📄 Successfully processed ${processingState.successfulPages} pages<br>
+        📊 Found ${processingState.totalItems} total items<br>
+        💾 <strong>Partial results saved to clipboard!</strong><br><br>
+        🔄 Restart extension and try again with fewer pages
+      `;
+      
+      this.showCompletionResults(crashMessage, crashResults);
+      
+    } catch (error) {
+      console.error('[Devex0] Failed to handle crash recovery:', error);
+    }
+  }
+
   hidePatternConfirmation() {
     const confirmDiv = document.getElementById('patternConfirmation');
     if (confirmDiv) {
