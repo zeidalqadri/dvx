@@ -52,6 +52,17 @@ class Devex0Interface {
       const result = await chrome.storage.local.get(tabKey);
       const storedState = result[tabKey];
       
+      // Also check for partial results from crashed processing
+      const resultsKey = `devex0_results_${this.currentTab.id}`;
+      const resultsResult = await chrome.storage.local.get(resultsKey);
+      const partialResults = resultsResult[resultsKey];
+      
+      if (partialResults && partialResults.status === 'in_progress') {
+        console.log('[Devex0] Found partial results from interrupted processing');
+        this.showCrashRecovery(partialResults);
+        return;
+      }
+      
       if (storedState) {
         console.log('[Devex0] Restoring workflow state:', storedState);
         
@@ -69,6 +80,57 @@ class Devex0Interface {
     } catch (error) {
       console.warn('[Devex0] Failed to restore state:', error);
     }
+  }
+
+  showCrashRecovery(partialResults) {
+    // Show crash recovery UI
+    let recoveryDiv = document.getElementById('crashRecovery');
+    if (!recoveryDiv) {
+      recoveryDiv = document.createElement('div');
+      recoveryDiv.id = 'crashRecovery';
+      recoveryDiv.style.cssText = `
+        font-size: 11px; 
+        margin-bottom: 12px; 
+        padding: 12px; 
+        border: 1px solid #ff9800; 
+        background: #fff3e0; 
+        border-radius: 4px;
+      `;
+      
+      const urlDisplay = document.getElementById('urlDisplay');
+      urlDisplay.parentNode.insertBefore(recoveryDiv, urlDisplay.nextSibling);
+    }
+    
+    recoveryDiv.innerHTML = `
+      <strong>🔄 Processing Recovery Available!</strong><br>
+      Found partial results from interrupted processing:<br>
+      📄 ${partialResults.summary.successfulPages} pages processed<br>
+      📊 ${partialResults.summary.totalItems} items found<br><br>
+      <button id="recoverResults" style="padding: 6px 12px; font-size: 10px; background: #ff9800; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 8px;">
+        📋 Copy Partial Results
+      </button>
+      <button id="dismissRecovery" style="padding: 6px 12px; font-size: 10px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">
+        ❌ Dismiss
+      </button>
+    `;
+    recoveryDiv.style.display = 'block';
+    
+    // Add event listeners
+    document.getElementById('recoverResults').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(JSON.stringify(partialResults, null, 2));
+      this.setStatus('Partial results copied to clipboard');
+      recoveryDiv.style.display = 'none';
+    });
+    
+    document.getElementById('dismissRecovery').addEventListener('click', async () => {
+      // Clear the partial results
+      const resultsKey = `devex0_results_${this.currentTab.id}`;
+      await chrome.storage.local.remove(resultsKey);
+      recoveryDiv.style.display = 'none';
+      this.setStatus('Recovery dismissed');
+    });
+    
+    this.setStatus('Crash recovery available - partial results found');
   }
 
   async restoreUIState(storedState) {
