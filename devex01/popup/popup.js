@@ -1005,6 +1005,8 @@ class Devex0Interface {
       
       if (patternResponse.success && patternResponse.pattern.success) {
         this.urlPattern = patternResponse.pattern;
+        this.workflowState = 'pattern_detected';
+        await this.saveWorkflowState();
         this.showPatternConfirmation();
       } else {
         this.setStatus('pattern detection failed - please navigate more pages', 'error');
