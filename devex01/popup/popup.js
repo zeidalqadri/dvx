@@ -226,17 +226,26 @@ class Devex0Interface {
         if (this.paginationStats.hasPagination) {
           // If pagination detected, enter pagination mode
           this.paginationMode = true;
+          this.workflowState = 'pagination_detected';
           this.setStatus('pagination detected - starting URL monitoring');
+          
+          // Save state before user navigates away
+          await this.saveWorkflowState();
           
           // Start URL monitoring
           const monitoringResponse = await this.sendToTab('START_URL_MONITORING');
           if (monitoringResponse.success) {
+            this.workflowState = 'url_monitoring';
+            await this.saveWorkflowState();
+            
             this.showPaginationGuidance();
             return; // Wait for user to navigate pages
           } else {
             console.warn('[Devex0] URL monitoring failed:', monitoringResponse.error);
             // Continue with normal extraction
             this.paginationMode = false;
+            this.workflowState = 'ready';
+            await this.saveWorkflowState();
           }
         }
       } else {
