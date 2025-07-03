@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DevEx0 Crash Recovery Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Consolas', monospace;
+      background: #fff;
+      color: #000;
+      width: 400px;
+      padding: 20px;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+    
+    .header {
+      font-size: 16px;
+      font-weight: normal;
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #000;
+    }
+    
+    .domain-indicator {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 8px;
+      border: 1px solid #000;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.1s;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: normal;
+    }
+    
+    button:hover {
+      background: #000;
+      color: #fff;
+    }
+    
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .status {
+      font-size: 12px;
+      color: #666;
+      min-height: 16px;
+      padding-top: 8px;
+      border-top: 1px solid #ccc;
+      letter-spacing: 0.3px;
+    }
+    
+    #crashRecovery {
+      font-size: 11px; 
+      margin-bottom: 12px; 
+      padding: 12px; 
+      border: 1px solid #ff9800; 
+      background: #fff3e0; 
+      border-radius: 4px;
+    }
+    
+    #processingProgress {
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid #2196F3;
+      background: #e3f2fd;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: #2196F3;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .activity-log {
+      max-height: 100px;
+      overflow-y: auto;
+      margin-top: 8px;
+      padding: 8px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: monospace;
+    }
+    
+    .log-entry {
+      margin-bottom: 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .console-log {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    devex0
+    <div id="domainIndicator" class="domain-indicator">ready</div>
+  </div>
+  
+  <!-- Crash Recovery Banner (initially hidden) -->
+  <div id="crashRecovery" style="display: none;">
+    <strong>🔄 Processing Recovery Available!</strong><br>
+    <span id="recoveryStats">
+      📄 Successfully processed <strong>1</strong> of <strong>3</strong> pages<br>
+      📊 Found <strong>24</strong> total items<br>
+    </span>
+    <div style="margin-top: 8px;">
+      <button id="copyPartialResults" style="padding: 6px 12px; font-size: 10px; background: #ff9800; color: white; border: none; border-radius: 3px; cursor: pointer;">
+        📋 Copy Partial Results
+      </button>
+      <button id="dismissRecovery" style="padding: 6px 12px; font-size: 10px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">
+        ❌ Dismiss
+      </button>
+    </div>
+  </div>
+  
+  <!-- Pagination Info -->
+  <div id="paginationInfo" style="font-size: 11px; margin-bottom: 12px; padding: 8px; border: 1px solid #4CAF50; background: #E8F5E9; border-radius: 4px;">
+    <strong>📄 Pagination Detected!</strong><br>
+    ✅ Found pagination controls on this page<br>
+    📊 Estimated <strong>10</strong> total pages<br>
+    🔢 Current page: <strong>1</strong> of <strong>10</strong><br>
+    <br>
+    <strong>Next Steps:</strong><br>
+    1. Navigate to page 2 using the site's pagination<br>
+    2. DevEx0 will analyze the URL pattern
+  </div>
+  
+  <!-- Navigation Button -->
+  <button id="navigateButton" style="width: 100%; margin-bottom: 16px; background: #4CAF50; color: white;">Navigate to Next Page</button>
+  
+  <!-- Pattern Confirmation (initially hidden) -->
+  <div id="patternConfirmation" style="display: none; font-size: 11px; margin-bottom: 12px; padding: 8px; border: 1px solid #2196F3; background: #E3F2FD; border-radius: 4px;">
+    <strong>🔍 URL Pattern Detected!</strong><br>
+    ✅ Pattern: <code>https://www.honeybirdette.com/collections/all-lingerie?page={PAGE}</code><br>
+    📊 Pages start at <strong>1</strong> and increment by <strong>1</strong><br>
+    <br>
+    <strong>Processing Options:</strong><br>
+    <div style="margin: 8px 0;">
+      <label for="pageLimit">Page limit:</label>
+      <input type="number" id="pageLimit" value="3" min="1" max="10" style="width: 60px; padding: 4px;">
+    </div>
+    <div class="button-row">
+      <button id="processAllButton" style="background: #2196F3; color: white;">Process All Pages</button>
+      <button id="processSingleButton">Single Page Only</button>
+    </div>
+  </div>
+  
+  <!-- Processing Progress (initially hidden) -->
+  <div id="processingProgress" style="display: none;">
+    <strong>🔄 Processing Multiple Pages...</strong>
+    
+    <div class="progress-stats" style="margin: 8px 0;">
+      <div>Page <span id="currentPage">1</span> of <span id="totalPages">3</span></div>
+      <div>Processed: <span id="successfulPages">0</span> pages, <span id="totalItems">0</span> items</div>
+    </div>
+    
+    <div class="progress-bar">
+      <div id="progressFill" class="progress-fill" style="width: 0%;"></div>
+    </div>
+    
+    <div class="activity-log" id="activityLog">
+      <!-- Log entries will be added here -->
+    </div>
+    
+    <button id="cancelProcessing" style="width: 100%; margin-top: 8px; background: #F44336; color: white;">Cancel Processing</button>
+  </div>
+  
+  <!-- Status Display -->
+  <div id="status" class="status">ready</div>
+  
+  <!-- Console Log Display (hidden, for testing) -->
+  <div id="consoleLogContainer" style="display: none;"></div>
+  
+  <script>
+    // Mock Chrome API for testing
+    window.chrome = {
+      storage: {
+        local: {
+          get: async function(key) {
+            console.log(`[Chrome Storage] Getting ${key}`);
+            const data = window.mockChromeStorage || {};
+            if (typeof key === 'string') {
+              return { [key]: data[key] };
+            } else if (Array.isArray(key)) {
+              const result = {};
+              key.forEach(k => {
+                result[k] = data[k];
+              });
+              return result;
+            } else {
+              return data;
+            }
+          },
+          set: async function(obj) {
+            console.log(`[Chrome Storage] Setting data`, obj);
+            window.mockChromeStorage = window.mockChromeStorage || {};
+            Object.assign(window.mockChromeStorage, obj);
+            return true;
+          },
+          remove: async function(key) {
+            console.log(`[Chrome Storage] Removing ${key}`);
+            if (window.mockChromeStorage && window.mockChromeStorage[key]) {
+              delete window.mockChromeStorage[key];
+            }
+            return true;
+          }
+        }
+      },
+      tabs: {
+        query: async function(queryInfo, callback) {
+          console.log(`[Chrome Tabs] Querying tabs`, queryInfo);
+          const tab = {
+            id: 12345,
+            url: 'https://www.honeybirdette.com/collections/all-lingerie'
+          };
+          if (callback) {
+            callback([tab]);
+          }
+          return [tab];
+        },
+        update: async function(tabId, updateProperties) {
+          console.log(`[Chrome Tabs] Updating tab ${tabId}`, updateProperties);
+          // Simulate navigation
+          if (updateProperties.url) {
+            console.log(`[Chrome Tabs] Navigating to ${updateProperties.url}`);
+            // Trigger URL change event after a delay
+            setTimeout(() => {
+              const event = new CustomEvent('urlChanged', { 
+                detail: { url: updateProperties.url } 
+              });
+              window.dispatchEvent(event);
+            }, 500);
+          }
+          return true;
+        }
+      }
+    };
+    
+    // Initialize mock storage
+    window.mockChromeStorage = {};
+    
+    // Mock clipboard API
+    window.lastClipboardContent = '';
+    navigator.clipboard = {
+      writeText: async function(text) {
+        console.log(`[Clipboard] Copying text: ${text.substring(0, 50)}...`);
+        window.lastClipboardContent = text;
+        return true;
+      }
+    };
+    
+    // Custom console.log to display in UI
+    const originalConsoleLog = console.log;
+    const originalConsoleWarn = console.warn;
+    const originalConsoleError = console.error;
+    
+    console.log = function() {
+      originalConsoleLog.apply(console, arguments);
+      const logContainer = document.getElementById('consoleLogContainer');
+      const logEntry = document.createElement('div');
+      logEntry.className = 'console-log';
+      logEntry.textContent = Array.from(arguments).join(' ');
+      logContainer.appendChild(logEntry);
+    };
+    
+    console.warn = function() {
+      originalConsoleWarn.apply(console, arguments);
+      const logContainer = document.getElementById('consoleLogContainer');
+      const logEntry = document.createElement('div');
+      logEntry.className = 'console-log';
+      logEntry.textContent = '[WARN] ' + Array.from(arguments).join(' ');
+      logContainer.appendChild(logEntry);
+    };
+    
+    console.error = function() {
+      originalConsoleError.apply(console, arguments);
+      const logContainer = document.getElementById('consoleLogContainer');
+      const logEntry = document.createElement('div');
+      logEntry.className = 'console-log';
+      logEntry.textContent = '[ERROR] ' + Array.from(arguments).join(' ');
+      logContainer.appendChild(logEntry);
+    };
+    
+    class Devex0Interface {
+      constructor() {
+        this.currentTab = { id: 12345, url: 'https://www.honeybirdette.com/collections/all-lingerie' };
+        this.extractedHTML = null;
+        this.workflowState = 'pagination_detected'; // ready, extracted, analyzed, pagination_detected, pattern_detected
+        this.paginationMode = true;
+        this.paginationStats = {
+          totalPages: 10,
+          currentPage: 1,
+          itemsPerPage: 24,
+          hasPagination: true
+        };
+        this.urlPattern = null;
+      }
+      
+      async init() {
+        try {
+          // Display current URL
+          this.displayCurrentURL();
+          
+          // Restore previous state if exists
+          await this.restoreWorkflowState();
+          
+          // Setup event listeners
+          this.setupEventListeners();
+          
+          // Update status based on restored state
+          if (this.workflowState === 'ready') {
+            this.setStatus('ready - click extract to begin');
+          } else if (this.workflowState === 'pagination_detected') {
+            this.setStatus('pagination detected - navigate to next page');
+          }
+          
+        } catch (error) {
+          console.error('[Devex0] Init failed:', error);
+          this.setStatus('initialization failed', 'error');
+        }
+      }
+      
+      displayCurrentURL() {
+        const domainIndicator = document.getElementById('domainIndicator');
+        if (domainIndicator && this.currentTab) {
+          try {
+            const url = new URL(this.currentTab.url);
+            domainIndicator.textContent = url.hostname;
+          } catch (e) {
+            domainIndicator.textContent = 'unknown';
+          }
+        }
+      }
+      
+      async restoreWorkflowState() {
+        try {
+          // Get stored state for current tab
+          const tabKey = `devex0_state_${this.currentTab.id}`;
+          const result = await chrome.storage.local.get(tabKey);
+          const storedState = result[tabKey];
+          
+          // Also check for partial results from crashed processing
+          const resultsKey = `devex0_results_${this.currentTab.id}`;
+          const resultsResult = await chrome.storage.local.get(resultsKey);
+          const partialResults = resultsResult[resultsKey];
+          
+          if (partialResults && partialResults.status === 'in_progress') {
+            console.log('[Devex0] Found partial results from interrupted processing');
+            this.showCrashRecovery(partialResults);
+            return;
+          }
+          
+          if (storedState) {
+            console.log('[Devex0] Restoring workflow state:', storedState);
+            
+            // Restore workflow variables
+            this.workflowState = storedState.workflowState || 'ready';
+            this.paginationMode = storedState.paginationMode || false;
+            this.paginationStats = storedState.paginationStats || null;
+            this.urlPattern = storedState.urlPattern || null;
+            
+            // Restore UI state based on workflow state
+            await this.restoreUIState(storedState);
+          }
+        } catch (error) {
+          console.warn('[Devex0] Failed to restore state:', error);
+        }
+      }
+      
+      async restoreUIState(storedState) {
+        // Show appropriate UI based on workflow state
+        if (storedState.workflowState === 'pagination_detected') {
+          document.getElementById('paginationInfo').style.display = 'block';
+          document.getElementById('navigateButton').style.display = 'block';
+          document.getElementById('patternConfirmation').style.display = 'none';
+          document.getElementById('processingProgress').style.display = 'none';
+        } else if (storedState.workflowState === 'pattern_detected') {
+          document.getElementById('paginationInfo').style.display = 'none';
+          document.getElementById('navigateButton').style.display = 'none';
+          document.getElementById('patternConfirmation').style.display = 'block';
+          document.getElementById('processingProgress').style.display = 'none';
+        } else if (storedState.workflowState === 'processing') {
+          document.getElementById('paginationInfo').style.display = 'none';
+          document.getElementById('navigateButton').style.display = 'none';
+          document.getElementById('patternConfirmation').style.display = 'none';
+          document.getElementById('processingProgress').style.display = 'block';
+        }
+      }
+      
+      showCrashRecovery(partialResults) {
+        // Show crash recovery UI
+        let recoveryDiv = document.getElementById('crashRecovery');
+        if (!recoveryDiv) {
+          recoveryDiv = document.createElement('div');
+          recoveryDiv.id = 'crashRecovery';
+          recoveryDiv.style.cssText = `
+            font-size: 11px; 
+            margin-bottom: 12px; 
+            padding: 12px; 
+            border: 1px solid #ff9800; 
+            background: #fff3e0; 
+            border-radius: 4px;
+          `;
+          
+          const urlDisplay = document.getElementById('domainIndicator');
+          urlDisplay.parentNode.insertBefore(recoveryDiv, urlDisplay.nextSibling);
+        }
+        
+        recoveryDiv.innerHTML = `
+          <strong>🔄 Processing Recovery Available!</strong><br>
+          <span id="recoveryStats">
+            📄 Successfully processed <strong>${partialResults.summary.successfulPages}</strong> of <strong>${partialResults.summary.totalPages}</strong> pages<br>
+            📊 Found <strong>${partialResults.summary.totalItems}</strong> total items<br>
+          </span>
+          <div style="margin-top: 8px;">
+            <button id="copyPartialResults" style="padding: 6px 12px; font-size: 10px; background: #ff9800; color: white; border: none; border-radius: 3px; cursor: pointer;">
+              📋 Copy Partial Results
+            </button>
+            <button id="dismissRecovery" style="padding: 6px 12px; font-size: 10px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">
+              ❌ Dismiss
+            </button>
+          </div>
+        `;
+        
+        recoveryDiv.style.display = 'block';
+        
+        // Add event listeners for recovery buttons
+        document.getElementById('copyPartialResults').addEventListener('click', async () => {
+          await navigator.clipboard.writeText(JSON.stringify(partialResults, null, 2));
+          this.setStatus('Partial results copied to clipboard');
+        });
+        
+        document.getElementById('dismissRecovery').addEventListener('click', async () => {
+          // Clear recovery data
+          const tabKey = `devex0_results_${this.currentTab.id}`;
+          await chrome.storage.local.remove(tabKey);
+          recoveryDiv.style.display = 'none';
+          this.setStatus('Recovery dismissed');
+        });
+        
+        this.setStatus('Crash recovery available - partial results found');
+      }
+      
+      setupEventListeners() {
+        // Navigation button
+        document.getElementById('navigateButton').addEventListener('click', () => {
+          this.handleNavigate();
+        });
+        
+        // Pattern confirmation buttons
+        document.getElementById('processAllButton').addEventListener('click', () => {
+          const pageLimit = parseInt(document.getElementById('pageLimit').value, 10) || 3;
+          this.processAllPages(pageLimit);
+        });
+        
+        document.getElementById('processSingleButton').addEventListener('click', () => {
+          this.processSinglePage();
+        });
+        
+        // Cancel processing button
+        document.getElementById('cancelProcessing').addEventListener('click', () => {
+          this.cancelProcessing();
+        });
+        
+        // Listen for URL changes (simulated in our test environment)
+        window.addEventListener('urlChanged', (event) => {
+          console.log(`[Devex0] URL changed to: ${event.detail.url}`);
+          this.handleURLChange(event.detail.url);
+        });
+      }
+      
+      handleNavigate() {
+        // In a real extension, this would navigate to the next page
+        // For our test, we'll simulate it
+        console.log('[Devex0] Navigating to next page...');
+        this.setStatus('navigating to next page...');
+        
+        // Simulate URL change
+        setTimeout(() => {
+          const nextURL = 'https://www.honeybirdette.com/collections/all-lingerie?page=2';
+          const event = new CustomEvent('urlChanged', { 
+            detail: { url: nextURL } 
+          });
+          window.dispatchEvent(event);
+        }, 1000);
+      }
+      
+      handleURLChange(url) {
+        // Detect pattern from URL change
+        try {
+          const urlObj = new URL(url);
+          const pageParam = urlObj.searchParams.get('page');
+          
+          if (pageParam) {
+            console.log(`[Devex0] Detected page parameter: ${pageParam}`);
+            
+            // Create URL pattern
+            const baseURL = url.replace(`page=${pageParam}`, 'page={PAGE}');
+            this.urlPattern = {
+              success: true,
+              pattern: baseURL,
+              increment: 1,
+              startValue: 1
+            };
+            
+            // Update workflow state
+            this.workflowState = 'pattern_detected';
+            this.saveWorkflowState();
+            
+            // Show pattern confirmation
+            document.getElementById('paginationInfo').style.display = 'none';
+            document.getElementById('navigateButton').style.display = 'none';
+            document.getElementById('patternConfirmation').style.display = 'block';
+            
+            // Update pattern display
+            const patternCode = document.querySelector('#patternConfirmation code');
+            if (patternCode) {
+              patternCode.textContent = baseURL;
+            }
+            
+            this.setStatus('URL pattern detected - choose processing option');
+          }
+        } catch (error) {
+          console.error('[Devex0] Error analyzing URL:', error);
+        }
+      }
+      
+      async saveWorkflowState() {
+        try {
+          const tabKey = `devex0_state_${this.currentTab.id}`;
+          const state = {
+            workflowState: this.workflowState,
+            paginationMode: this.paginationMode,
+            paginationStats: this.paginationStats,
+            urlPattern: this.urlPattern
+          };
+          
+          await chrome.storage.local.set({ [tabKey]: state });
+          console.log('[Devex0] Workflow state saved');
+        } catch (error) {
+          console.warn('[Devex0] Failed to save workflow state:', error);
+        }
+      }
+      
+      async processAllPages(maxPages) {
+        try {
+          this.workflowState = 'processing';
+          await this.saveWorkflowState();
+          
+          // Show processing UI
+          document.getElementById('patternConfirmation').style.display = 'none';
+          this.showProcessingProgress();
+          
+          // Generate page URLs
+          const pageURLs = this.generatePageURLs(maxPages);
+          console.log(`[Devex0] Generated ${pageURLs.length} page URLs for processing`);
+          
+          // Initialize processing state
+          const processingState = {
+            totalPages: pageURLs.length,
+            currentPage: 0,
+            successfulPages: 0,
+            failedPages: 0,
+            totalItems: 0,
+            allPageData: [],
+            allSelectors: new Set(),
+            startTime: Date.now()
+          };
+          
+          // Process each page
+          for (let i = 0; i < pageURLs.length; i++) {
+            const pageURL = pageURLs[i];
+            const pageNumber = i + 1;
+            
+            processingState.currentPage = pageNumber;
+            this.updateProcessingProgress(processingState, `Loading page ${pageNumber}...`);
+            
+            try {
+              // Save progress before processing each page
+              await this.saveProcessingProgress(processingState);
+              
+              // Navigate to page with retry mechanism
+              const pageData = await this.processSinglePageWithRetry(pageURL, pageNumber, 3);
+              
+              if (pageData.success) {
+                processingState.successfulPages++;
+                processingState.totalItems += pageData.itemCount || 0;
+                processingState.allPageData.push(pageData);
+                
+                // Collect unique selectors discovered
+                if (pageData.selectors) {
+                  pageData.selectors.forEach(sel => processingState.allSelectors.add(sel));
+                }
+                
+                // Save incremental results
+                await this.saveIncrementalResults(processingState);
+                
+                this.updateProcessingProgress(processingState, 
+                  `Page ${pageNumber}: Found ${pageData.itemCount || 0} items`);
+              } else {
+                processingState.failedPages++;
+                console.warn(`[Devex0] Page ${pageNumber} failed:`, pageData.error);
+                this.updateProcessingProgress(processingState, 
+                  `Page ${pageNumber}: Failed - ${pageData.error}`);
+              }
+              
+            } catch (error) {
+              processingState.failedPages++;
+              console.error(`[Devex0] Page ${pageNumber} critical error:`, error);
+              
+              // Save partial results even on crash
+              await this.saveIncrementalResults(processingState);
+              
+              this.updateProcessingProgress(processingState, 
+                `Page ${pageNumber}: Critical Error - ${error.message}`);
+              
+              // Check if we should continue or abort
+              if (error.message.includes('Extension context invalidated') || 
+                  error.message.includes('Cannot access chrome.tabs')) {
+                console.error('[Devex0] Extension context lost - saving results and aborting');
+                await this.handleProcessingCrash(processingState);
+                return;
+              }
+            }
+            
+            // Small delay between pages to avoid overwhelming the server
+            if (i < pageURLs.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            // For testing: Simulate a crash after the first page
+            if (i === 0) {
+              console.log('[Devex0] Simulating extension crash after first page');
+              const crashError = new Error('Extension context invalidated');
+              await this.handleProcessingCrash(processingState);
+              throw crashError;
+            }
+          }
+          
+          // Processing complete - show results
+          await this.showMultiPageResults(processingState);
+          
+        } catch (error) {
+          console.error('[Devex0] Multi-page processing failed:', error);
+          this.setStatus(`multi-page processing failed: ${error.message}`, 'error');
+          this.hideProcessingProgress();
+        }
+      }
+      
+      generatePageURLs(maxPages) {
+        if (!this.urlPattern || !this.urlPattern.success) {
+          console.error('[Devex0] No valid URL pattern for generation');
+          return [];
+        }
+        
+        const urls = [];
+        const { pattern, increment, startValue } = this.urlPattern;
+        
+        for (let page = 1; page <= maxPages; page++) {
+          let pageValue;
+          
+          if (increment === 1) {
+            // Simple page numbering: 1, 2, 3, ...
+            pageValue = page;
+          } else {
+            // Offset-based: 0, 20, 40, ... or 1, 21, 41, ...
+            pageValue = startValue + (page - 1) * increment;
+          }
+          
+          // Fix for the pattern structure mismatch
+          // The pattern is a string, not an object with a template property
+          const url = pattern.replace('{PAGE}', pageValue);
+          urls.push(url);
+        }
+        
+        return urls;
+      }
+      
+      async processSinglePageWithRetry(pageURL, pageNumber, maxRetries) {
+        let attempts = 0;
+        
+        while (attempts < maxRetries) {
+          attempts++;
+          
+          try {
+            console.log(`[Devex0] Processing page ${pageNumber}, attempt ${attempts}: ${pageURL}`);
+            
+            // In a real extension, this would navigate to the page and extract data
+            // For our test, we'll simulate it
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Simulate successful extraction
+            return {
+              success: true,
+              url: pageURL,
+              pageNumber: pageNumber,
+              itemCount: 24,
+              selectors: ['product-card', 'product-title', 'product-price'],
+              timestamp: new Date().toISOString()
+            };
+            
+          } catch (error) {
+            console.error(`[Devex0] Page ${pageNumber} processing failed (attempt ${attempts}):`, error);
+            
+            if (attempts >= maxRetries) {
+              return {
+                success: false,
+                url: pageURL,
+                pageNumber: pageNumber,
+                error: error.message,
+                timestamp: new Date().toISOString()
+              };
+            }
+            
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
+      
+      showProcessingProgress() {
+        const progressDiv = document.getElementById('processingProgress');
+        progressDiv.style.display = 'block';
+        
+        // Reset progress elements
+        document.getElementById('currentPage').textContent = '0';
+        document.getElementById('totalPages').textContent = '0';
+        document.getElementById('successfulPages').textContent = '0';
+        document.getElementById('totalItems').textContent = '0';
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('activityLog').innerHTML = '';
+        
+        this.setStatus('processing multiple pages...');
+      }
+      
+      updateProcessingProgress(state, message) {
+        // Update progress elements
+        document.getElementById('currentPage').textContent = state.currentPage;
+        document.getElementById('totalPages').textContent = state.totalPages;
+        document.getElementById('successfulPages').textContent = state.successfulPages;
+        document.getElementById('totalItems').textContent = state.totalItems;
+        
+        // Update progress bar
+        const progressPercent = (state.currentPage / state.totalPages) * 100;
+        document.getElementById('progressFill').style.width = `${progressPercent}%`;
+        
+        // Add log entry
+        if (message) {
+          const logEntry = document.createElement('div');
+          logEntry.className = 'log-entry';
+          const timestamp = new Date().toLocaleTimeString();
+          logEntry.innerHTML = `<strong>${timestamp}</strong>: ${message}`;
+          
+          const activityLog = document.getElementById('activityLog');
+          activityLog.appendChild(logEntry);
+          activityLog.scrollTop = activityLog.scrollHeight;
+        }
+      }
+      
+      hideProcessingProgress() {
+        const progressDiv = document.getElementById('processingProgress');
+        progressDiv.style.display = 'none';
+      }
+      
+      async saveProcessingProgress(processingState) {
+        try {
+          const tabKey = `devex0_progress_${this.currentTab.id}`;
+          await chrome.storage.local.set({ [tabKey]: processingState });
+          console.log('[Devex0] Processing progress saved');
+        } catch (error) {
+          console.warn('[Devex0] Failed to save processing progress:', error);
+        }
+      }
+      
+      async saveIncrementalResults(processingState) {
+        try {
+          const tabKey = `devex0_results_${this.currentTab.id}`;
+          const partialResults = {
+            multiPageExtraction: true,
+            status: 'in_progress',
+            summary: {
+              totalPages: processingState.totalPages,
+              successfulPages: processingState.successfulPages,
+              failedPages: processingState.failedPages,
+              totalItems: processingState.totalItems,
+              uniqueSelectors: Array.from(processingState.allSelectors),
+              processingTime: Date.now() - processingState.startTime
+            },
+            pages: processingState.allPageData,
+            metadata: {
+              url: this.currentTab.url,
+              timestamp: new Date().toISOString(),
+              paginationPattern: this.urlPattern,
+              paginationStats: this.paginationStats
+            }
+          };
+          
+          await chrome.storage.local.set({ [tabKey]: partialResults });
+          console.log(`[Devex0] Incremental results saved (${processingState.successfulPages} pages)`);
+        } catch (error) {
+          console.warn('[Devex0] Failed to save incremental results:', error);
+        }
+      }
+      
+      async handleProcessingCrash(processingState) {
+        try {
+          console.log('[Devex0] Handling processing crash - saving partial results');
+          
+          // Save final partial results
+          await this.saveIncrementalResults(processingState);
+          
+          // Create crash recovery results
+          const crashResults = {
+            multiPageExtraction: true,
+            status: 'crashed_partial',
+            summary: {
+              totalPages: processingState.totalPages,
+              successfulPages: processingState.successfulPages,
+              failedPages: processingState.failedPages,
+              totalItems: processingState.totalItems,
+              uniqueSelectors: Array.from(processingState.allSelectors),
+              processingTime: Date.now() - processingState.startTime,
+              crashedAt: processingState.currentPage
+            },
+            pages: processingState.allPageData,
+            metadata: {
+              url: this.currentTab.url,
+              timestamp: new Date().toISOString(),
+              paginationPattern: this.urlPattern,
+              paginationStats: this.paginationStats,
+              crashReason: 'Extension context lost during navigation'
+            }
+          };
+          
+          // Copy partial results to clipboard
+          await navigator.clipboard.writeText(JSON.stringify(crashResults, null, 2));
+          
+          // Show crash recovery message
+          const crashMessage = `
+            ⚠️ Processing interrupted after page ${processingState.currentPage}!<br>
+            📄 Successfully processed ${processingState.successfulPages} pages<br>
+            📊 Found ${processingState.totalItems} total items<br>
+            💾 <strong>Partial results saved to clipboard!</strong><br><br>
+            🔄 Restart extension and try again with fewer pages
+          `;
+          
+          this.showCompletionResults(crashMessage, crashResults);
+          
+        } catch (error) {
+          console.error('[Devex0] Failed to handle crash recovery:', error);
+        }
+      }
+      
+      showCompletionResults(message, results) {
+        // In a real extension, this would show a completion UI
+        // For our test, we'll just log it
+        console.log('[Devex0] Processing complete:', message);
+        console.log('[Devex0] Results:', results);
+        
+        this.hideProcessingProgress();
+        this.setStatus('processing complete - results copied to clipboard');
+      }
+      
+      async showMultiPageResults(processingState) {
+        // Create final results
+        const finalResults = {
+          multiPageExtraction: true,
+          status: 'complete',
+          summary: {
+            totalPages: processingState.totalPages,
+            successfulPages: processingState.successfulPages,
+            failedPages: processingState.failedPages,
+            totalItems: processingState.totalItems,
+            uniqueSelectors: Array.from(processingState.allSelectors),
+            processingTime: Date.now() - processingState.startTime
+          },
+          pages: processingState.allPageData,
+          metadata: {
+            url: this.currentTab.url,
+            timestamp: new Date().toISOString(),
+            paginationPattern: this.urlPattern,
+            paginationStats: this.paginationStats
+          }
+        };
+        
+        // Copy results to clipboard
+        await navigator.clipboard.writeText(JSON.stringify(finalResults, null, 2));
+        
+        // Show completion message
+        const completionMessage = `
+          ✅ Processing complete!<br>
+          📄 Successfully processed ${processingState.successfulPages} of ${processingState.totalPages} pages<br>
+          📊 Found ${processingState.totalItems} total items<br>
+          ⏱️ Processing time: ${Math.round((Date.now() - processingState.startTime) / 1000)}s<br><br>
+          💾 <strong>Results copied to clipboard!</strong>
+        `;
+        
+        this.showCompletionResults(completionMessage, finalResults);
+      }
+      
+      processSinglePage() {
+        // In a real extension, this would process just the current page
+        // For our test, we'll just log it
+        console.log('[Devex0] Processing single page only');
+        this.setStatus('processing single page...');
+        
+        // Simulate processing
+        setTimeout(() => {
+          this.setStatus('single page processed - results copied to clipboard');
+        }, 1000);
+      }
+      
+      cancelProcessing() {
+        // In a real extension, this would cancel the processing
+        // For our test, we'll just log it
+        console.log('[Devex0] Processing cancelled by user');
+        this.hideProcessingProgress();
+        this.setStatus('processing cancelled by user');
+      }
+      
+      setStatus(message, type = '') {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        statusEl.className = `status ${type}`;
+      }
+    }
+    
+    // Initialize when DOM loads
+    document.addEventListener('DOMContentLoaded', () => {
+      const devex0 = new Devex0Interface();
+      window.devex0Interface = devex0; // Make available globally for debugging
+      devex0.init();
+    });
+  </script>
+</body>
+</html>
