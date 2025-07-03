@@ -1311,21 +1311,22 @@ class Devex0Interface {
       try {
         console.log(`[Devex0] Processing page ${pageNumber}, attempt ${attempt}: ${pageURL}`);
         
-        // Navigate to the page using Chrome tabs API
-        await this.navigateToPage(pageURL);
+        // Fetch page content headlessly (no tab navigation)
+        const htmlContent = await this.fetchPageHeadless(pageURL);
         
-        // Wait for page to load
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (!htmlContent) {
+          throw new Error('Failed to fetch page content');
+        }
         
-        // Re-run asset analysis on this page
-        const analysisResult = await this.runAssetAnalysisOnCurrentPage();
+        // Run asset analysis on fetched HTML
+        const analysisResult = await this.runAssetAnalysisOnHTML(htmlContent);
         
         if (!analysisResult.success) {
           throw new Error(`Asset analysis failed: ${analysisResult.error}`);
         }
         
-        // Extract data using discovered selectors
-        const extractionResult = await this.extractDataFromCurrentPage(analysisResult.selectors);
+        // Extract data using discovered selectors on fetched HTML
+        const extractionResult = await this.extractDataFromHTML(htmlContent, analysisResult.selectors);
         
         return {
           success: true,
@@ -1357,6 +1358,142 @@ class Devex0Interface {
       error: lastError?.message || 'Unknown error',
       timestamp: new Date().toISOString()
     };
+  }
+
+  async fetchPageHeadless(url) {
+    try {
+      console.log(`[Devex0] Fetching page headlessly: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1'
+        },
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const htmlContent = await response.text();
+      console.log(`[Devex0] Successfully fetched ${htmlContent.length} characters`);
+      
+      return htmlContent;
+      
+    } catch (error) {
+      console.error(`[Devex0] Headless fetch failed:`, error);
+      
+      // Fallback to CORS proxy if direct fetch fails
+      try {
+        console.log(`[Devex0] Trying CORS proxy fallback`);
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        const proxyResponse = await fetch(proxyUrl);
+        
+        if (proxyResponse.ok) {
+          const data = await proxyResponse.json();
+          return data.contents;
+        }
+      } catch (proxyError) {
+        console.warn(`[Devex0] CORS proxy also failed:`, proxyError);
+      }
+      
+      throw new Error(`Failed to fetch page: ${error.message}`);
+    }
+  }
+
+  async runAssetAnalysisOnHTML(htmlContent) {
+    try {
+      // Load AssetSelectorRanker if needed
+      await this.loadAssetRanker();
+      
+      // Run analysis on provided HTML
+      const ranker = new window.AssetSelectorRanker(htmlContent);
+      const analysis = ranker.getFullAnalysis(25); // Get top 25 selectors
+      
+      return {
+        success: true,
+        selectors: analysis.selectors,
+        summary: analysis.summary,
+        pagination: analysis.pagination
+      };
+      
+    } catch (error) {
+      console.error('[Devex0] Asset analysis failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  async extractDataFromHTML(htmlContent, selectors) {
+    const extractionResults = {
+      totalItems: 0,
+      data: {},
+      selectorsUsed: []
+    };
+    
+    try {
+      // Create a temporary DOM parser to work with the HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      
+      // Use top 10 selectors for extraction to get comprehensive data
+      const topSelectors = selectors.slice(0, 10).map(s => s.selector);
+      
+      for (const selector of topSelectors) {
+        try {
+          const elements = doc.querySelectorAll(selector);
+          
+          if (elements.length > 0) {
+            const extractedData = [];
+            
+            elements.forEach((element, index) => {
+              const itemData = {
+                index: index,
+                text: element.textContent?.trim() || '',
+                html: element.outerHTML?.substring(0, 500) || '', // Truncate for performance
+                tagName: element.tagName.toLowerCase()
+              };
+              
+              // Extract common attributes
+              if (element.id) itemData.id = element.id;
+              if (element.className) itemData.className = element.className;
+              if (element.getAttribute('href')) itemData.href = element.getAttribute('href');
+              if (element.getAttribute('src')) itemData.src = element.getAttribute('src');
+              if (element.getAttribute('alt')) itemData.alt = element.getAttribute('alt');
+              
+              extractedData.push(itemData);
+            });
+            
+            extractionResults.data[selector] = extractedData;
+            extractionResults.totalItems += extractedData.length;
+            extractionResults.selectorsUsed.push(selector);
+          }
+        } catch (selectorError) {
+          console.warn(`[Devex0] Failed to extract ${selector}:`, selectorError);
+        }
+      }
+      
+      return extractionResults;
+      
+    } catch (error) {
+      console.error('[Devex0] HTML extraction failed:', error);
+      return {
+        totalItems: 0,
+        data: {},
+        selectorsUsed: [],
+        error: error.message
+      };
+    }
   }
 
   async navigateToPage(url) {
