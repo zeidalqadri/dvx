@@ -1386,6 +1386,23 @@ class Devex0Interface {
       const htmlContent = await response.text();
       console.log(`[Devex0] Successfully fetched ${htmlContent.length} characters`);
       
+      // Debug: Check if we got meaningful content
+      const productIndicators = [
+        'product', 'item', 'price', 'add-to-cart', 'buy-now',
+        'data-product', 'product-card', 'item-card'
+      ];
+      
+      const hasProductContent = productIndicators.some(indicator => 
+        htmlContent.toLowerCase().includes(indicator)
+      );
+      
+      console.log(`[Devex0] HTML contains product indicators: ${hasProductContent}`);
+      
+      if (!hasProductContent) {
+        console.warn(`[Devex0] Fetched HTML appears to lack product content - may need JavaScript execution`);
+        console.log(`[Devex0] Sample HTML (first 500 chars):`, htmlContent.substring(0, 500));
+      }
+      
       return htmlContent;
       
     } catch (error) {
@@ -1399,6 +1416,7 @@ class Devex0Interface {
         
         if (proxyResponse.ok) {
           const data = await proxyResponse.json();
+          console.log(`[Devex0] CORS proxy returned ${data.contents?.length || 0} characters`);
           return data.contents;
         }
       } catch (proxyError) {
