@@ -25,18 +25,113 @@ class Devex0Interface {
       // Show current URL
       this.displayCurrentURL();
       
+      // Restore previous state if exists
+      await this.restoreWorkflowState();
+      
       // Load Google Sheets dependencies
       await this.loadGoogleSheetsDependencies();
       
       // Setup event listeners
       this.setupEventListeners();
       
-      // Update status
-      this.setStatus('ready - click extract to begin');
+      // Update status based on restored state
+      if (this.workflowState === 'ready') {
+        this.setStatus('ready - click extract to begin');
+      }
       
     } catch (error) {
       console.error('[Devex0] Init failed:', error);
       this.setStatus('initialization failed', 'error');
+    }
+  }
+
+  async restoreWorkflowState() {
+    try {
+      // Get stored state for current tab
+      const tabKey = `devex0_state_${this.currentTab.id}`;
+      const result = await chrome.storage.local.get(tabKey);
+      const storedState = result[tabKey];
+      
+      if (storedState) {
+        console.log('[Devex0] Restoring workflow state:', storedState);
+        
+        // Restore workflow variables
+        this.workflowState = storedState.workflowState || 'ready';
+        this.paginationMode = storedState.paginationMode || false;
+        this.paginationStats = storedState.paginationStats || null;
+        this.urlPattern = storedState.urlPattern || null;
+        this.extractedHTML = storedState.extractedHTML || null;
+        this.lastExtractionData = storedState.lastExtractionData || null;
+        
+        // Restore UI state based on workflow state
+        await this.restoreUIState(storedState);
+      }
+    } catch (error) {
+      console.warn('[Devex0] Failed to restore state:', error);
+    }
+  }
+
+  async restoreUIState(storedState) {
+    if (storedState.workflowState === 'pagination_detected') {
+      // Show pagination info
+      if (storedState.paginationStats) {
+        const formatted = this.formatPaginationStats(storedState.paginationStats);
+        this.showPaginationInfo(formatted);
+      }
+      
+      // Show guidance for navigation
+      if (storedState.paginationMode && !storedState.urlPattern) {
+        this.showPaginationGuidance();
+        this.setStatus('continue navigating pages to detect pattern');
+      } else if (storedState.urlPattern) {
+        this.showPatternConfirmation();
+        this.setStatus('pattern detected - ready to process pages');
+      }
+    } else if (storedState.workflowState === 'url_monitoring') {
+      this.showPaginationGuidance();
+      this.setStatus('monitoring URL changes - continue navigating pages');
+    } else if (storedState.workflowState === 'pattern_detected') {
+      if (storedState.paginationStats) {
+        const formatted = this.formatPaginationStats(storedState.paginationStats);
+        this.showPaginationInfo(formatted);
+      }
+      this.showPatternConfirmation();
+      this.setStatus('pattern detected - ready to process pages');
+    } else if (storedState.workflowState === 'extracted') {
+      document.getElementById('extract').style.display = 'none';
+      document.getElementById('insightOptions').style.display = 'block';
+      this.setStatus('HTML copied to clipboard - choose next step');
+    }
+  }
+
+  async saveWorkflowState() {
+    try {
+      const tabKey = `devex0_state_${this.currentTab.id}`;
+      const stateToSave = {
+        workflowState: this.workflowState,
+        paginationMode: this.paginationMode,
+        paginationStats: this.paginationStats,
+        urlPattern: this.urlPattern,
+        extractedHTML: this.extractedHTML ? this.extractedHTML.substring(0, 10000) : null, // Truncate for storage
+        lastExtractionData: this.lastExtractionData,
+        timestamp: Date.now(),
+        url: this.currentTab.url
+      };
+      
+      await chrome.storage.local.set({ [tabKey]: stateToSave });
+      console.log('[Devex0] Workflow state saved for tab', this.currentTab.id);
+    } catch (error) {
+      console.warn('[Devex0] Failed to save state:', error);
+    }
+  }
+
+  async clearWorkflowState() {
+    try {
+      const tabKey = `devex0_state_${this.currentTab.id}`;
+      await chrome.storage.local.remove(tabKey);
+      console.log('[Devex0] Workflow state cleared for tab', this.currentTab.id);
+    } catch (error) {
+      console.warn('[Devex0] Failed to clear state:', error);
     }
   }
 
