@@ -774,6 +774,9 @@ class Devex0Interface {
     this.paginationStats = null;
     this.urlPattern = null;
     
+    // Clear stored workflow state
+    this.clearWorkflowState();
+    
     // Reset UI
     document.getElementById('extract').style.display = 'block';
     document.getElementById('insightOptions').style.display = 'none';
