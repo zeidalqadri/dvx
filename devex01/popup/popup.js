@@ -1150,6 +1150,9 @@ class Devex0Interface {
         this.updateProcessingProgress(processingState, `Loading page ${pageNumber}...`);
         
         try {
+          // Save progress before processing each page
+          await this.saveProcessingProgress(processingState);
+          
           // Navigate to page with retry mechanism
           const pageData = await this.processSinglePageWithRetry(pageURL, pageNumber, 3);
           
@@ -1163,6 +1166,9 @@ class Devex0Interface {
               pageData.selectors.forEach(sel => processingState.allSelectors.add(sel));
             }
             
+            // Save incremental results
+            await this.saveIncrementalResults(processingState);
+            
             this.updateProcessingProgress(processingState, 
               `Page ${pageNumber}: Found ${pageData.itemCount || 0} items`);
           } else {
@@ -1174,9 +1180,21 @@ class Devex0Interface {
           
         } catch (error) {
           processingState.failedPages++;
-          console.error(`[Devex0] Page ${pageNumber} error:`, error);
+          console.error(`[Devex0] Page ${pageNumber} critical error:`, error);
+          
+          // Save partial results even on crash
+          await this.saveIncrementalResults(processingState);
+          
           this.updateProcessingProgress(processingState, 
-            `Page ${pageNumber}: Error - ${error.message}`);
+            `Page ${pageNumber}: Critical Error - ${error.message}`);
+          
+          // Check if we should continue or abort
+          if (error.message.includes('Extension context invalidated') || 
+              error.message.includes('Cannot access chrome.tabs')) {
+            console.error('[Devex0] Extension context lost - saving results and aborting');
+            await this.handleProcessingCrash(processingState);
+            return;
+          }
         }
         
         // Small delay between pages to avoid overwhelming the server
