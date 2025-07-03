@@ -1309,23 +1309,24 @@ class Devex0Interface {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`[Devex0] Processing page ${pageNumber}, attempt ${attempt}: ${pageURL}`);
+        console.log(`[Devex0] Processing page ${pageNumber}, attempt ${attempt}: ${pageURL} (headless)`);
         
-        // Navigate to the page using Chrome tabs API
-        await this.navigateToPage(pageURL);
+        // Fetch page content headlessly (no tab navigation)
+        const htmlContent = await this.fetchPageHeadless(pageURL);
         
-        // Wait for page to load
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (!htmlContent) {
+          throw new Error('Failed to fetch page content');
+        }
         
-        // Re-run asset analysis on this page
-        const analysisResult = await this.runAssetAnalysisOnCurrentPage();
+        // Run asset analysis on fetched HTML
+        const analysisResult = await this.runAssetAnalysisOnHTML(htmlContent);
         
         if (!analysisResult.success) {
           throw new Error(`Asset analysis failed: ${analysisResult.error}`);
         }
         
-        // Extract data using discovered selectors
-        const extractionResult = await this.extractDataFromCurrentPage(analysisResult.selectors);
+        // Extract data using discovered selectors on fetched HTML
+        const extractionResult = await this.extractDataFromHTML(htmlContent, analysisResult.selectors);
         
         return {
           success: true,
