@@ -1309,9 +1309,9 @@ class Devex0Interface {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`[Devex0] Processing page ${pageNumber}, attempt ${attempt}: ${pageURL} (headless)`);
+        console.log(`[Devex0] Processing page ${pageNumber}, attempt ${attempt}: ${pageURL}`);
         
-        // Fetch page content headlessly (no tab navigation)
+        // First try headless fetch
         const htmlContent = await this.fetchPageHeadless(pageURL);
         
         if (!htmlContent) {
@@ -1328,6 +1328,21 @@ class Devex0Interface {
         // Extract data using discovered selectors on fetched HTML
         const extractionResult = await this.extractDataFromHTML(htmlContent, analysisResult.selectors);
         
+        // Check if we got meaningful data
+        if (extractionResult.totalItems === 0) {
+          console.warn(`[Devex0] Headless extraction returned 0 items - trying with tab navigation`);
+          
+          // Fallback to tab navigation for JavaScript-heavy sites
+          const tabExtractionResult = await this.processPageWithTab(pageURL, pageNumber);
+          
+          if (tabExtractionResult.success && tabExtractionResult.itemCount > 0) {
+            console.log(`[Devex0] Tab navigation successful: ${tabExtractionResult.itemCount} items`);
+            return tabExtractionResult;
+          } else {
+            console.warn(`[Devex0] Tab navigation also returned 0 items`);
+          }
+        }
+        
         return {
           success: true,
           pageNumber: pageNumber,
@@ -1336,6 +1351,7 @@ class Devex0Interface {
           selectors: analysisResult.selectors.map(s => s.selector),
           analysis: analysisResult,
           extraction: extractionResult,
+          method: 'headless',
           timestamp: new Date().toISOString()
         };
         
@@ -1358,6 +1374,51 @@ class Devex0Interface {
       error: lastError?.message || 'Unknown error',
       timestamp: new Date().toISOString()
     };
+  }
+
+  async processPageWithTab(pageURL, pageNumber) {
+    try {
+      console.log(`[Devex0] Fallback to tab navigation for page ${pageNumber}: ${pageURL}`);
+      
+      // Navigate to the page using Chrome tabs API
+      await this.navigateToPage(pageURL);
+      
+      // Wait for page to load and JavaScript to execute
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Re-run asset analysis on this page
+      const analysisResult = await this.runAssetAnalysisOnCurrentPage();
+      
+      if (!analysisResult.success) {
+        throw new Error(`Asset analysis failed: ${analysisResult.error}`);
+      }
+      
+      // Extract data using discovered selectors
+      const extractionResult = await this.extractDataFromCurrentPage(analysisResult.selectors);
+      
+      return {
+        success: true,
+        pageNumber: pageNumber,
+        url: pageURL,
+        itemCount: extractionResult.totalItems || 0,
+        selectors: analysisResult.selectors.map(s => s.selector),
+        analysis: analysisResult,
+        extraction: extractionResult,
+        method: 'tab_navigation',
+        timestamp: new Date().toISOString()
+      };
+      
+    } catch (error) {
+      console.error(`[Devex0] Tab navigation fallback failed:`, error);
+      return {
+        success: false,
+        pageNumber: pageNumber,
+        url: pageURL,
+        error: error.message,
+        method: 'tab_navigation_failed',
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 
   async fetchPageHeadless(url) {
