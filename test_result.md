@@ -402,7 +402,7 @@
     - "URL pattern recognition during navigation"
     - "Pattern confirmation and page limit settings"
     - "Multi-page vs single-page processing options"
-    - "Reset functionality for pagination state"
+    - "Persistent state management for pagination workflow"
   stuck_tasks: []
   test_all: true
   test_priority: "sequential"
