@@ -275,6 +275,13 @@ class PaginationDetector {
     // Determine the pattern details
     const pattern = this.buildPattern(baseURL, relevantDiffs);
     
+    if (!pattern || !pattern.template) {
+      return {
+        success: false,
+        error: 'Failed to build URL pattern from detected differences'
+      };
+    }
+    
     return {
       success: true,
       type: mostCommonType,
