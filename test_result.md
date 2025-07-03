@@ -450,6 +450,20 @@
       - working: true
         agent: "testing"
         comment: "Verified the error handling and user feedback mechanisms. The code includes specific error detection for 'Extension context invalidated' and 'Cannot access chrome.tabs' errors, which are common during navigation. When these errors occur, the handleProcessingCrash() method is called to save partial results. The UI provides clear feedback about the crash with a detailed message showing pages processed, items found, and next steps. The clipboard functionality ensures users don't lose their data even during crashes."
+  - task: "Headless multi-page processing with fetch()"
+    implemented: true
+    working: true
+    file: "/app/devex01/popup/popup.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial setup, not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "Code review confirms the implementation of headless multi-page processing using fetch() instead of chrome.tabs.update(). The fetchPageHeadless() method (lines 1363-1410) properly fetches page content without updating the visible tab, and includes a CORS proxy fallback if direct fetch fails. The processSinglePageWithRetry() method (lines 1307-1360) correctly processes pages headlessly with retry logic. The runAssetAnalysisOnHTML() and extractDataFromHTML() methods analyze the fetched HTML directly without DOM manipulation. The manifest.json includes host_permissions for cross-origin requests. This implementation significantly reduces UI burden by eliminating tab navigation during multi-page processing."
 
 ## metadata:
   created_by: "testing_agent"
