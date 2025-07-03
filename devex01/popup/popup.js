@@ -952,6 +952,34 @@ class Devex0Interface {
     return lines.join('\n');
   }
 
+  formatPaginationStats(stats) {
+    const lines = [];
+    
+    if (stats.hasPagination) {
+      lines.push(`🔍 Pagination detected: ${stats.paginationType || 'unknown type'}`);
+      
+      if (stats.totalPages) {
+        lines.push(`📄 Total pages: ${stats.totalPages}`);
+      }
+      
+      if (stats.currentPage) {
+        lines.push(`📍 Current page: ${stats.currentPage}`);
+      }
+      
+      if (stats.totalItems) {
+        lines.push(`📊 Total items: ${stats.totalItems.toLocaleString()}`);
+      }
+      
+      if (stats.itemsPerPage) {
+        lines.push(`📋 Items per page: ${stats.itemsPerPage}`);
+      }
+    } else {
+      lines.push(`❌ No pagination detected on this page`);
+    }
+    
+    return lines.join('\n');
+  }
+
   // ============== PAGINATION HELPER METHODS ==============
 
   showPaginationInfo(formattedStats) {
