@@ -395,11 +395,7 @@
 
 ## test_plan:
   current_focus:
-    - "Automatic pagination detection on page load"
-    - "URL pattern recognition during navigation"
-    - "Pattern confirmation and page limit settings"
-    - "Multi-page vs single-page processing options"
-    - "Persistent state management for pagination workflow"
+    - "Fix multi-page processing URL pattern structure mismatch"
   stuck_tasks: []
   test_all: true
   test_priority: "sequential"
