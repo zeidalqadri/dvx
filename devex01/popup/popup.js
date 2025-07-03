@@ -1011,7 +1011,11 @@ class Devex0Interface {
       <strong>🎯 Please navigate through pages:</strong><br>
       1. Click "Next" or page numbers 2-3 times<br>
       2. I'll detect the URL pattern automatically<br>
-      3. Then return here to continue extraction<br><br>
+      3. <strong>⚠️ Keep this popup open while navigating!</strong><br>
+      4. Return here and click "Check Pattern"<br><br>
+      <div style="background: #ffeb3b; padding: 4px 8px; border-radius: 3px; margin: 8px 0; font-size: 10px; color: #333;">
+        💡 <strong>Tip:</strong> Pin this popup by clicking the 📌 button in your browser's extension toolbar
+      </div>
       <button id="checkPattern" style="padding: 6px 12px; font-size: 10px; background: #ff9800; color: white; border: none; border-radius: 3px; cursor: pointer;">
         Check Pattern
       </button>
