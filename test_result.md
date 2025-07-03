@@ -472,10 +472,7 @@
 
 ## test_plan:
   current_focus:
-    - "Incremental progress saving during multi-page processing"
-    - "Crash detection and partial results preservation"
-    - "Recovery UI when extension is reopened after crash"
-    - "Graceful error handling and user feedback"
+    - "Headless multi-page processing with fetch()"
   stuck_tasks: []
   test_all: true
   test_priority: "sequential"
