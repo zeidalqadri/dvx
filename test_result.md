@@ -391,14 +391,77 @@
         agent: "testing"
         comment: "Fixed the TypeError: Cannot read properties of undefined (reading 'replace') error by implementing two changes: 1) In popup.js, modified line 1220 to use pattern.replace() directly instead of pattern.template.replace(), and 2) In pagination-detector.js, added null checking at line 457 with 'pattern && pattern.template ? pattern.template.replace('{PAGE}', pageValue) : '''. These changes ensure the code properly handles the pattern structure where pattern is a string in popup.js but an object with a template property in pagination-detector.js."
 
+  - task: "Incremental progress saving during multi-page processing"
+    implemented: true
+    working: true
+    file: "/app/devex01/popup/popup.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial setup, not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "Verified the saveProcessingProgress() method correctly saves the processing state to Chrome storage before processing each page. The method uses tab-specific keys (devex0_progress_[tabId]) to store the state, which includes totalPages, currentPage, successfulPages, failedPages, totalItems, and other processing data. This ensures that progress is saved incrementally during multi-page processing."
+
+  - task: "Crash detection and partial results preservation"
+    implemented: true
+    working: true
+    file: "/app/devex01/popup/popup.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial setup, not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "Verified the saveIncrementalResults() method properly saves partial results to Chrome storage after each successful page processing. The method creates a structured JSON object with multiPageExtraction, status, summary, pages, and metadata fields. The handleProcessingCrash() method is called when extension context is lost, which saves the final partial results and creates a crash recovery object with appropriate metadata including crashReason."
+
+  - task: "Recovery UI when extension is reopened after crash"
+    implemented: true
+    working: true
+    file: "/app/devex01/popup/popup.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial setup, not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "Tested the recovery UI functionality. When the extension is reopened after a crash, the restoreWorkflowState() method checks for partial results with status 'in_progress' and calls showCrashRecovery() if found. The recovery UI displays a banner with statistics about the interrupted processing (pages processed, items found) and provides buttons to copy partial results or dismiss the recovery. The UI is well-designed with clear visual indicators and actionable options."
+
+  - task: "Graceful error handling and user feedback"
+    implemented: true
+    working: true
+    file: "/app/devex01/popup/popup.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial setup, not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "Verified the error handling and user feedback mechanisms. The code includes specific error detection for 'Extension context invalidated' and 'Cannot access chrome.tabs' errors, which are common during navigation. When these errors occur, the handleProcessingCrash() method is called to save partial results. The UI provides clear feedback about the crash with a detailed message showing pages processed, items found, and next steps. The clipboard functionality ensures users don't lose their data even during crashes."
+
 ## metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 4
+  test_sequence: 5
 
 ## test_plan:
   current_focus:
-    - "Fix multi-page processing URL pattern structure mismatch"
+    - "Incremental progress saving during multi-page processing"
+    - "Crash detection and partial results preservation"
+    - "Recovery UI when extension is reopened after crash"
+    - "Graceful error handling and user feedback"
   stuck_tasks: []
   test_all: true
   test_priority: "sequential"
@@ -424,3 +487,5 @@
     message: "Identified the root cause of the 'Cannot read properties of undefined (reading 'replace')' error in the multi-page processing feature. The issue occurs in the generatePageURLs method in popup.js (line 1218) where it tries to access pattern.template.replace(), but pattern is a string, not an object with a template property. This mismatch happens because in pagination-detector.js, the analyzeURLPattern method returns an object where pattern is a string (line 281: pattern: pattern.template), but in popup.js, it expects pattern to be an object with a template property. The fix would be to modify the generatePageURLs method in popup.js to handle the correct structure of this.urlPattern."
   - agent: "testing"
     message: "Fixed the TypeError: Cannot read properties of undefined (reading 'replace') error in the multi-page processing feature. Implemented two changes: 1) In popup.js, modified line 1220 to use pattern.replace() directly instead of pattern.template.replace(), and 2) In pagination-detector.js, added null checking at line 457 with 'pattern && pattern.template ? pattern.template.replace('{PAGE}', pageValue) : '''. These changes ensure the code properly handles the pattern structure where pattern is a string in popup.js but an object with a template property in pagination-detector.js. The bug fix has been successfully implemented and should resolve the multi-page processing error."
+  - agent: "testing"
+    message: "Completed testing of the crash recovery features in the Chrome extension. The implementation successfully handles crashes during multi-page processing by saving incremental progress and partial results to Chrome storage. The saveProcessingProgress() method saves the state before processing each page, while the saveIncrementalResults() method saves partial results after each successful page. When a crash occurs, the handleProcessingCrash() method creates a structured crash recovery object with appropriate metadata. Upon reopening the extension, the recovery UI displays a banner with statistics about the interrupted processing and provides buttons to copy partial results or dismiss the recovery. The error handling specifically detects common navigation-related errors like 'Extension context invalidated' and provides clear user feedback. All components of the crash recovery system work as designed, ensuring users don't lose their data even during crashes."
