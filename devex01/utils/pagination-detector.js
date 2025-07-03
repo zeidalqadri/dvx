@@ -453,7 +453,8 @@ class PaginationDetector {
         pageValue = startValue + (page - 1) * increment;
       }
 
-      const url = pattern.template.replace('{PAGE}', pageValue);
+      // Add null check to prevent TypeError when pattern.template is undefined
+      const url = pattern && pattern.template ? pattern.template.replace('{PAGE}', pageValue) : '';
       urls.push(url);
     }
 
