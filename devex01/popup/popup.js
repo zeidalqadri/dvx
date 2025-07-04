@@ -1191,6 +1191,9 @@ class Devex0Interface {
       
       console.log('[Devex0] Generated URLs for processing:', pageURLs);
       
+      // Initialize offscreen processor for truly headless processing
+      await this.initializeOffscreenProcessor();
+      
       // Initialize processing state
       const processingState = {
         totalPages: pageURLs.length,
@@ -1203,7 +1206,40 @@ class Devex0Interface {
         startTime: Date.now()
       };
       
-      // Process each page
+      // Try offscreen batch processing first (truly headless)
+      try {
+        this.setStatus('processing pages with offscreen processor...');
+        const batchResult = await this.processWithOffscreen(pageURLs);
+        
+        if (batchResult.success && batchResult.totalItems > 0) {
+          console.log('[Devex0] Offscreen processing successful:', batchResult);
+          
+          // Update processing state with batch results
+          processingState.successfulPages = batchResult.successfulPages;
+          processingState.failedPages = batchResult.failedPages;
+          processingState.totalItems = batchResult.totalItems;
+          processingState.allPageData = batchResult.results;
+          
+          // Collect selectors
+          batchResult.results.forEach(result => {
+            if (result.selectors) {
+              result.selectors.forEach(sel => processingState.allSelectors.add(sel));
+            }
+          });
+          
+          await this.showMultiPageResults(processingState);
+          return;
+        } else {
+          console.warn('[Devex0] Offscreen processing failed or returned 0 items, falling back to individual processing');
+        }
+      } catch (offscreenError) {
+        console.warn('[Devex0] Offscreen processing failed:', offscreenError);
+      }
+      
+      // Fallback to individual page processing
+      console.log('[Devex0] Using individual page processing fallback');
+      
+      // Process each page individually
       for (let i = 0; i < pageURLs.length; i++) {
         const pageURL = pageURLs[i];
         const pageNumber = i + 1;
@@ -1272,6 +1308,61 @@ class Devex0Interface {
       console.error('[Devex0] Multi-page processing failed:', error);
       this.setStatus(`multi-page processing failed: ${error.message}`, 'error');
       this.hideProcessingProgress();
+    }
+  }
+
+  async initializeOffscreenProcessor() {
+    try {
+      // Check if offscreen document already exists
+      const existingContexts = await chrome.runtime.getContexts({
+        contextTypes: ['OFFSCREEN_DOCUMENT'],
+        documentUrls: [chrome.runtime.getURL('offscreen/offscreen.html')]
+      });
+
+      if (existingContexts.length > 0) {
+        console.log('[Devex0] Offscreen document already exists');
+        return;
+      }
+
+      // Create offscreen document
+      await chrome.offscreen.createDocument({
+        url: chrome.runtime.getURL('offscreen/offscreen.html'),
+        reasons: ['BLOBS'],
+        justification: 'Headless processing of JavaScript-heavy web pages for data extraction'
+      });
+
+      console.log('[Devex0] Offscreen document created');
+      
+      // Wait a moment for it to initialize
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+    } catch (error) {
+      console.error('[Devex0] Failed to initialize offscreen processor:', error);
+      throw error;
+    }
+  }
+
+  async processWithOffscreen(pageURLs) {
+    try {
+      console.log('[Devex0] Starting offscreen batch processing');
+      
+      const response = await chrome.runtime.sendMessage({
+        action: 'PROCESS_MULTIPLE_PAGES',
+        urls: pageURLs,
+        options: {
+          loadDelay: 4000, // Wait 4 seconds for JavaScript
+          pageDelay: 1500  // 1.5 second delay between pages
+        }
+      });
+      
+      return response;
+      
+    } catch (error) {
+      console.error('[Devex0] Offscreen processing failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
