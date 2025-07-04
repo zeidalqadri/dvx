@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DevEx0 Headless Processor</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <div id="processor-container">
+    <h3>DevEx0 Headless Processing</h3>
+    <p>Status: <span id="status">Ready</span></p>
+    <p>Current URL: <span id="current-url">None</span></p>
+    <p>Items Found: <span id="items-count">0</span></p>
+  </div>
+
+  <!-- Hidden iframe for loading pages -->
+  <iframe id="processing-frame" style="display: none; width: 1px; height: 1px; border: none;"></iframe>
+
+  <script src="../utils/asset-selector-ranker.js"></script>
+  <script src="offscreen-processor.js"></script>
+</body>
+</html>
