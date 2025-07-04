@@ -10,7 +10,8 @@
     "clipboardWrite",
     "identity",
     "storage",
-    "scripting"
+    "scripting",
+    "offscreen"
   ],
   "host_permissions": [
     "https://sheets.googleapis.com/*",
